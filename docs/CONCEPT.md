@@ -10,6 +10,8 @@ The owner subsequently selected **creating a hero and combining powers** as the 
 
 The `client/` Godot project now contains an early Hero Lab prototype: signature color selection, three freely selected power slots from four abilities, third-person movement, a small arena, physics crates, and five stationary sentinels. It includes resource limits, cloak detection changes, obstacle-aware Blink, damage, defeat, reset, and a pause/build menu. See the README for controls and limitations.
 
+Prototype 03 adds Shockwave and Energy Shield. The opening screen starts with three empty slots and requires the player to choose exactly three of six freely combinable powers before entering.
+
 The mission and expansion sections below remain future proposals. Prototype 02 replaces the capsule with a rigged Quaternius robot, adds imported movement and punch clips, physical energy projectiles, melee combat, ambientCG PBR surfaces, and layered 3D effects. The arena still has a target-disabling objective rather than core retrieval and extraction.
 
 ## What to take from the reference

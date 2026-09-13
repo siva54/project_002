@@ -7,12 +7,12 @@ const Surfaces = preload("res://scripts/surface_library.gd")
 const VFX = preload("res://scripts/power_vfx.gd")
 const Projectile = preload("res://scripts/energy_projectile.gd")
 const COLORS := [Color("46dec6"), Color("eeaa55"), Color("ae9bff"), Color("f26b86")]
-const POWER_IDS := ["bolt", "blink", "kinetic", "cloak"]
+const POWER_IDS := Catalog.POWER_IDS
 
 var hero: CharacterBody3D
 var arena: Node3D
 var effects: Node3D
-var loadout: Array = ["bolt", "blink", "kinetic"]
+var loadout: Array = []
 var energy := 100.0
 var health := 100.0
 var cooldowns: Dictionary = {}
@@ -21,6 +21,8 @@ var color_index := 0
 var held_prop: RigidBody3D
 var kinetic_aura: Node3D
 var cloak_aura: Node3D
+var shield_aura: Node3D
+var shield_time := 0.0
 var melee_cooldown := 0.0
 var melee_windup := 0.0
 var score := 0
@@ -35,6 +37,8 @@ var score_label: Label
 var status_label: Label
 var start_button: Button
 var power_buttons: Dictionary = {}
+var power_titles: Dictionary = {}
+var build_slots: Array[Label] = []
 var slot_labels: Array[Label] = []
 
 func _ready() -> void:
@@ -156,6 +160,7 @@ func _build_world() -> void:
 			band.get_child(0).material_override = Surfaces.pbr("metal", Color("c4a057"), 1.0)
 
 func reset_arena() -> void:
+	_end_shield()
 	_clear_aura("kinetic")
 	_clear_aura("cloak")
 	melee_cooldown = 0
@@ -264,6 +269,12 @@ func _physics_process(delta: float) -> void:
 		if melee_windup <= 0:
 			_resolve_melee()
 	energy = minf(Catalog.MAX_ENERGY, energy + delta * Catalog.REGEN_PER_SECOND)
+	if shield_time > 0:
+		shield_time = maxf(0, shield_time - delta)
+		if shield_time <= 0:
+			_end_shield()
+		elif is_instance_valid(shield_aura):
+			shield_aura.global_position = hero.position + Vector3.UP
 	for id in cooldowns:
 		cooldowns[id] = maxf(0.0, cooldowns[id] - delta)
 	if cloak_time > 0:
@@ -310,6 +321,10 @@ func activate_slot(slot: int) -> bool:
 			success = _blink()
 		"kinetic":
 			success = _grab_prop()
+		"shockwave":
+			success = _shockwave()
+		"shield":
+			success = _shield()
 		"cloak":
 			cloak_time = 5.0
 			_clear_aura("cloak")
@@ -323,6 +338,43 @@ func activate_slot(slot: int) -> bool:
 		energy -= float(Catalog.POWERS[id].cost)
 		cooldowns[id] = float(Catalog.POWERS[id].cooldown)
 	return success
+
+func _shield() -> bool:
+	_end_shield()
+	shield_time = Catalog.SHIELD_DURATION
+	shield_aura = VFX.shield(effects, hero.position + Vector3.UP)
+	hero.play_attack()
+	_message("ENERGY SHIELD  /  Incoming energy blocked for 5 seconds")
+	return true
+
+func _end_shield() -> void:
+	shield_time = 0
+	if is_instance_valid(shield_aura):
+		shield_aura.queue_free()
+	shield_aura = null
+
+func _shockwave() -> bool:
+	_reveal()
+	hero.play_attack()
+	var origin: Vector3 = hero.position + Vector3.UP
+	VFX.shockwave(effects, hero.position, Catalog.SHOCKWAVE_RADIUS)
+	for group in ["targets", "props"]:
+		for body in get_tree().get_nodes_in_group(group):
+			if body.is_queued_for_deletion() or body == held_prop:
+				continue
+			var center: Vector3 = body.position + (Vector3.UP if group == "targets" else Vector3.ZERO)
+			var offset := center - origin
+			if offset.length() > Catalog.SHOCKWAVE_RADIUS:
+				continue
+			var ray := PhysicsRayQueryParameters3D.create(origin, center, 5)
+			var hit := get_world_3d().direct_space_state.intersect_ray(ray)
+			if not hit.is_empty() and hit.collider == body:
+				if group == "targets":
+					_damage_target(body, Catalog.SHOCKWAVE_DAMAGE)
+				else:
+					body.apply_central_impulse(offset.normalized() * 22 + Vector3.UP * 7)
+	_message("SHOCKWAVE  /  Exposed enemies hit. Nearby crates launched.")
+	return true
 
 func _reveal() -> void:
 	_clear_aura("cloak")
@@ -355,6 +407,10 @@ func _orb_impact(body: Node, at: Vector3, hostile: bool, color: Color, direction
 	VFX.burst(effects, at, color, 0.75)
 	if hostile:
 		if body == hero:
+			if shield_time > 0:
+				VFX.burst(effects, at, Color("57bbff"), 0.9)
+				_message("SHIELD BLOCK  /  %.1fs remaining" % shield_time)
+				return
 			health = maxf(0, health - 6)
 			if health <= 0:
 				show_menu()
@@ -575,43 +631,66 @@ func _build_ui() -> void:
 		margin.add_theme_constant_override("margin_" + side, 36)
 	menu.add_child(margin)
 	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 48)
+	columns.add_theme_constant_override("separation", 32)
 	margin.add_child(columns)
 	var left := VBoxContainer.new()
-	left.custom_minimum_size.x = 590
-	left.add_theme_constant_override("separation", 10)
+	left.custom_minimum_size.x = 700
+	left.add_theme_constant_override("separation", 8)
 	columns.add_child(left)
-	left.add_child(_label("P R O J E C T   0 0 2     /     P R O T O T Y P E   0 2", 13, COLORS[0]))
-	left.add_child(_label("Build your own hero.", 38))
-	left.add_child(_label("Choose three powers. Discover what they can do together.", 16, Color("a2b7c9")))
-	left.add_child(_label("01   /   SIGNATURE COLOR", 13, COLORS[0]))
-	var colors := HBoxContainer.new()
-	colors.add_theme_constant_override("separation", 8)
-	left.add_child(colors)
-	var names := ["Jade", "Solar", "Violet", "Coral"]
-	for i in range(COLORS.size()):
-		var button := _button(names[i])
-		button.modulate = COLORS[i]
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.pressed.connect(func():
-			color_index = i
-			hero.set_appearance(COLORS[i], cloak_time > 0)
-		)
-		colors.add_child(button)
-	left.add_child(_label("02   /   POWER LOADOUT", 13, COLORS[0]))
+	left.add_child(_label("P R O J E C T   0 0 2     /     P R O T O T Y P E   0 3", 13, COLORS[0]))
+	left.add_child(_label("Choose your three powers.", 34))
+	left.add_child(_label("Six powers. Three slots. Build your own combination.", 16, Color("a2b7c9")))
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	left.add_child(grid)
 	for id in POWER_IDS:
 		var data: Dictionary = Catalog.POWERS[id]
 		var button := _button("")
-		button.custom_minimum_size.y = 56
+		button.name = "Choose_" + id
+		button.custom_minimum_size.y = 112
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.pressed.connect(_toggle_power.bind(id))
-		button.tooltip_text = data.description
-		left.add_child(button)
+		button.tooltip_text = data.name + ": " + data.description
+		grid.add_child(button)
 		power_buttons[id] = button
-		left.add_child(_label(data.description, 13, Color("9bb0c2")))
-	status_label = _label("", 14, Color("f2bb6b"))
+		var content := VBoxContainer.new()
+		content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		content.offset_left = 14
+		content.offset_right = -14
+		content.offset_top = 10
+		content.offset_bottom = -10
+		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_theme_constant_override("separation", 3)
+		button.add_child(content)
+		var title := _label("", 19)
+		title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(title)
+		power_titles[id] = title
+		var cost := _label("%d energy  ·  %.1fs cooldown" % [int(data.cost), float(data.cooldown)], 12, Color("91a9bc"))
+		cost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(cost)
+		var description := _label(data.description, 13, Color("b7c9d7"))
+		description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		description.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(description)
+	left.add_child(_label("YOUR LOADOUT  /  Assigned in the order you choose", 13, COLORS[0]))
+	var preview := HBoxContainer.new()
+	preview.add_theme_constant_override("separation", 8)
+	left.add_child(preview)
+	for slot in range(3):
+		var panel := PanelContainer.new()
+		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		panel.add_theme_stylebox_override("panel", _panel_style(Color("102331")))
+		preview.add_child(panel)
+		var label := _label("", 13)
+		panel.add_child(label)
+		build_slots.append(label)
+	status_label = _label("", 13, Color("f2bb6b"))
 	left.add_child(status_label)
 	start_button = _button("Enter the playground   →")
-	start_button.custom_minimum_size.y = 48
+	start_button.custom_minimum_size.y = 44
 	start_button.pressed.connect(start_play)
 	left.add_child(start_button)
 	var reset_button := _button("Reset arena & restore hero")
@@ -626,7 +705,21 @@ func _build_ui() -> void:
 	columns.add_child(right)
 	right.add_child(_label("H E R O   L A B", 30, COLORS[0]))
 	right.add_child(_label("A place to discover your build.", 18))
-	var description := _label("Five sentinels. Four loose crates.\nCover, a raised platform, and room to experiment.\n\nCombine powers to disable all five sentinels.\nThey fire when they can see you.\nCloak makes them search your last position.", 17, Color("a2b7c9"))
+	right.add_child(_label("SIGNATURE COLOR", 13, COLORS[0]))
+	var colors := HBoxContainer.new()
+	colors.add_theme_constant_override("separation", 6)
+	right.add_child(colors)
+	var names := ["Jade", "Solar", "Violet", "Coral"]
+	for i in range(COLORS.size()):
+		var button := _button(names[i])
+		button.modulate = COLORS[i]
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.pressed.connect(func():
+			color_index = i
+			hero.set_appearance(COLORS[i], cloak_time > 0)
+		)
+		colors.add_child(button)
+	var description := _label("Choose exactly three powers before entering.\nClick a selected power to remove it.\n\nTry Shield + Shockwave + Blink to close the gap, protect yourself, and hit a group.", 17, Color("a2b7c9"))
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	right.add_child(description)
 	right.add_child(_label("FIELD CONTROLS", 13, COLORS[0]))
@@ -694,8 +787,14 @@ func _bar(color: Color) -> ProgressBar:
 	return bar
 
 func _toggle_power(id: String) -> void:
+	if not Catalog.POWERS.has(id):
+		return
 	if loadout.has(id):
 		loadout.erase(id)
+		if id == "shield":
+			_end_shield()
+		elif id == "cloak":
+			_reveal()
 	elif loadout.size() < Catalog.SLOT_COUNT:
 		loadout.append(id)
 	else:
@@ -707,10 +806,13 @@ func _update_loadout_ui() -> void:
 	for id in POWER_IDS:
 		var slot := loadout.find(id)
 		var data: Dictionary = Catalog.POWERS[id]
-		power_buttons[id].text = "%s   %s     ·     %d energy" % ["[%d]" % (slot + 1) if slot >= 0 else "[ + ]", data.name, int(data.cost)]
-		power_buttons[id].add_theme_color_override("font_color", COLORS[0] if slot >= 0 else Color("94a8bc"))
+		power_titles[id].text = "%s  %s" % ["[%d]" % (slot + 1) if slot >= 0 else "[ + ]", data.name]
+		power_titles[id].add_theme_color_override("font_color", COLORS[0] if slot >= 0 else Color("dce7ef"))
+		power_buttons[id].add_theme_stylebox_override("normal", _panel_style(Color("193e43") if slot >= 0 else Color("152638"), COLORS[0] if slot >= 0 else Color("294154")))
+	for slot in range(build_slots.size()):
+		build_slots[slot].text = "[%d]  %s" % [slot + 1, Catalog.POWERS[loadout[slot]].name if slot < loadout.size() else "Choose a power"]
 	start_button.disabled = not Catalog.validate_loadout(loadout) or health <= 0
-	status_label.text = "%d / 3 powers equipped  ·  Click a selected power to remove it" % loadout.size()
+	status_label.text = "%d / 3 selected  ·  %s" % [loadout.size(), "Ready. Your selection order sets keys 1, 2, 3." if loadout.size() == 3 else "Choose exactly three powers to enter."]
 
 func show_menu() -> void:
 	running = false
@@ -726,7 +828,10 @@ func show_menu() -> void:
 	hud.hide()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_update_loadout_ui()
-	start_button.grab_focus()
+	if start_button.disabled:
+		power_buttons[POWER_IDS[0]].grab_focus()
+	else:
+		start_button.grab_focus()
 
 func start_play() -> void:
 	if not Catalog.validate_loadout(loadout) or health <= 0:
@@ -754,6 +859,8 @@ func _update_hud() -> void:
 	energy_bar.value = energy
 	health_bar.value = health
 	score_label.text = "%d / 5 SENTINELS DISABLED%s" % [score, "   ·   CLOAKED %.1fs" % cloak_time if cloak_time > 0 else ""]
+	if shield_time > 0:
+		score_label.text += "   ·   SHIELD %.1fs" % shield_time
 	for i in range(slot_labels.size()):
 		if i >= loadout.size():
 			slot_labels[i].text = "Empty slot"
@@ -763,4 +870,6 @@ func _update_hud() -> void:
 		var state := "READY" if remaining <= 0 else "%.1fs" % remaining
 		if id == "kinetic" and is_instance_valid(held_prop):
 			state = "THROW"
+		elif id == "shield" and shield_time > 0:
+			state = "PROTECTED %.1fs" % shield_time
 		slot_labels[i].text = "[%d]  %s\n%s" % [i + 1, Catalog.POWERS[id].name, state]

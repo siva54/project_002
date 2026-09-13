@@ -2,7 +2,7 @@
 
 An original third-person superpower action game inspired by the character-building freedom of Project Awakened.
 
-Status: **Hero Lab — Prototype 02**, a playable Godot power playground with animated characters, textured materials, melee, and 3D energy effects.
+Status: **Hero Lab — Prototype 03**, a playable Godot power playground with animated characters, textured materials, melee, and 3D energy effects.
 
 ## Play
 
@@ -14,7 +14,18 @@ godot --path client
 
 You can also open `client/project.godot` in Godot 4 and press F6 with the hero lab scene open, or F5 to run the project.
 
-Choose a signature color and equip three of four powers: Energy Bolt, Blink, Telekinesis, and Cloak. Click a selected power to remove it before adding another. Enter the playground and disable five sentinels. Press Esc to pause, change powers, or reset the arena.
+The game opens with three empty slots. Choose exactly three of the six powers below; Enter becomes available only when all three slots are filled. Cards and the loadout preview show the assigned keys (1, 2, 3) in selection order. Click a selected card to remove it, then choose a replacement. You can also choose a signature color. Enter the playground and disable five sentinels; Esc pauses and reopens your build.
+
+| Power | What it does |
+| --- | --- |
+| Energy Bolt | Cast a traveling orb that damages targets and pushes crates. |
+| Blink | Teleport up to eight metres through clear space. |
+| Telekinesis | Lift a crate, then use the power again to throw it. |
+| Cloak | Conceal yourself for five seconds; attacks reveal you. |
+| Shockwave | Damage exposed enemies within six metres and fling crates outward. Solid cover blocks it. |
+| Energy Shield | Block incoming enemy energy for five seconds while continuing to move and attack. |
+
+All twenty distinct three-power combinations are available. For example, Shield + Shockwave + Blink creates a protected close-range build. Removing Shield or Cloak from the build ends its active effect. Arena reset preserves your selected three powers.
 
 | Control | Action |
 | --- | --- |
@@ -40,11 +51,12 @@ The intended starting window is 1280 × 800. Godot `4.7.2.stable.official.ed1daf
 ```sh
 godot --headless --editor --quit --path client
 godot --headless --path client --script res://tests/run_tests.gd
+godot --headless --path client --script res://tests/run_power_tests.gd
 godot --path client --script res://tests/capture.gd
 godot --path client --fixed-fps 60 --script res://tests/capture_actions.gd
 ```
 
-The automated suite checks loadouts, energy and cooldowns, cloak behavior, traveling projectile damage, physical thrown-crate impact, Blink collision and ground travel, reset, defeat, movement and animation selection, jumping, melee timing, and pause including in-flight attacks. The capture command opens a temporary rendered window, saves images to `docs/qa/`, and exits.
+The automated suite checks loadouts, energy and cooldowns, cloak behavior, traveling projectile damage, physical thrown-crate impact, Blink collision and ground travel, reset, defeat, movement and animation selection, jumping, melee timing, and pause including in-flight attacks. The dedicated power suite also checks all twenty builds, empty/incomplete selection rejection, Shockwave range and cover, Shield expiry and damage blocking, and cleanup when changing powers. The capture command opens a temporary rendered window, saves images to `docs/qa/`, and exits.
 
 Read [the concept and prototype scope](docs/CONCEPT.md) for the proposed direction, milestones, and research references. Decisions in that document are proposals unless explicitly marked as confirmed.
 

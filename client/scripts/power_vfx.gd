@@ -114,3 +114,30 @@ static func aura(parent: Node3D, color: Color, radius: float = 0.9) -> Node3D:
 		var tween := effect.create_tween().set_loops()
 		tween.tween_property(torus, "rotation:y", TAU + 0.5, 1.8 + i * 0.5).from(0.5)
 	return effect
+
+static func shield(parent: Node3D, at: Vector3) -> Node3D:
+	var effect := Node3D.new()
+	effect.name = "EnergyShield"
+	parent.add_child(effect)
+	effect.global_position = at
+	var shell := sphere(effect, 1.2, Color("57bbff"), true)
+	shell.scale.y = 1.1
+	for angle in [0.0, PI / 2]:
+		var band := ring(effect, 1.22, Color("57bbff"))
+		band.rotation = Vector3(PI / 2, angle, 0)
+	var light := OmniLight3D.new()
+	light.light_color = Color("57bbff")
+	light.light_energy = 0.8
+	light.omni_range = 3.5
+	effect.add_child(light)
+	return effect
+
+static func shockwave(parent: Node3D, at: Vector3, radius: float) -> void:
+	var effect := burst(parent, at + Vector3.UP * 0.35, Color("ffaa53"), 1.3)
+	var shell := sphere(effect, 1.0, Color("ffaa53"), true)
+	shell.scale = Vector3(0.2, 0.2, 0.2)
+	var ground_ring := ring(effect, 1.0, Color("ffc576"))
+	var tween := effect.create_tween().set_parallel(true)
+	tween.tween_property(shell, "scale", Vector3(radius, 1.8, radius), 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(ground_ring, "scale", Vector3(radius, 1, radius), 0.45)
+	tween.tween_method(func(value: float): shell.material_override.set_shader_parameter("opacity", value), 0.7, 0, 0.5)

@@ -19,6 +19,7 @@ func _capture() -> void:
 	lab = load("res://scenes/hero_lab.tscn").instantiate()
 	root.add_child(lab)
 	await frames(20)
+	lab.loadout = ["bolt", "blink", "kinetic"]
 	lab.start_play()
 	Input.action_press("move_forward")
 	await frames(16)
@@ -69,6 +70,18 @@ func _capture() -> void:
 	lab._blink()
 	await frames(8)
 	await save_frame("blink")
+	lab.reset_arena()
+	lab.loadout = ["shield", "shockwave", "blink"]
+	lab.hero.position = Vector3(0, 0.05, 2)
+	observer.position = Vector3(6, 4, 8)
+	observer.look_at(Vector3(0, 1, -1))
+	await frames(4)
+	lab.activate_slot(0)
+	await frames(8)
+	await save_frame("energy-shield")
+	lab.activate_slot(1)
+	await frames(14)
+	await save_frame("shockwave")
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	print("Captured walking, running, casting, impact, telekinesis, cloak, melee, and Blink.")
+	print("Captured movement, attacks, and all six power effects.")
 	quit()

@@ -43,3 +43,13 @@
 - Confirmed the remote was empty; initialized the local repository on `main` and configured `origin` to the requested SSH URL.
 - Prepared the complete prototype source, bundled assets and licenses, documentation, launcher, and QA screenshots for the initial commit. Godot's generated cache and local QA logs remain excluded by `.gitignore`.
 - Pre-commit verification: Godot headless editor import passed, the rendered integration suite passed **51 checks with zero failures**, and `zsh -n play.command` passed.
+
+## 2026-09-12 21:00 CDT — six powers and explicit opening selection
+
+- Owner requested two more superpowers and emphasized choosing three powers at the beginning.
+- Added Shockwave (six-metre, cover-aware area damage and physics impulses on loose crates) and Energy Shield (five seconds of protection against incoming enemy energy, with an eight-second cooldown). Both use authored 3D meshes and layered effects; no additional downloaded assets are required.
+- Opening now starts with three empty slots. A two-column grid displays all six powers, costs, cooldowns, and descriptions. The assigned key order is shown in both cards and a three-slot preview. Entry requires exactly three valid, distinct selections; a fourth selection is rejected until one is removed.
+- Shield remains active while moving and attacking, pauses with the game, expires normally, and clears on reset or unequip. Removing Cloak likewise clears its active effect. Arena reset preserves the selected build.
+- Updated capture tools to explicitly choose their test builds, added selected-build/Shield/Shockwave screenshots, and updated the README and concept notes.
+- Validation: clean Godot editor import; **57 existing integration checks and 43 dedicated power/selection checks passed** in both headless and rendered runs. Coverage includes all twenty distinct builds, initial empty/incomplete selection rejection, actual incoming-projectile blocking, Shield expiry, Shockwave range and cover, crate movement, and swapping/reset cleanup.
+- Visually reviewed the initial and selected three-slot screens plus both new effects at 1280 × 800. Preparing this update for commit and push to `origin/main` under the owner's existing instruction.

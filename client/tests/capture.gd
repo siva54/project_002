@@ -11,6 +11,10 @@ func _capture() -> void:
 	await RenderingServer.frame_post_draw
 	var directory := ProjectSettings.globalize_path("res://../docs/qa/")
 	root.get_texture().get_image().save_png(directory + "hero-builder.png")
+	for id in ["bolt", "blink", "kinetic"]:
+		lab._toggle_power(id)
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(directory + "three-power-build.png")
 	lab.start_play()
 	for i in range(20):
 		await process_frame
