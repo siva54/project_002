@@ -142,7 +142,9 @@ func _run() -> void:
 	reacting_sentinel.set_meta("shot_timer", 0.0)
 	var projectile_count := get_nodes_in_group("projectiles").size()
 	reacting_sentinel.update_brain(lab.hero, true, 0.1)
-	check(get_nodes_in_group("projectiles").size() == projectile_count + 1, "An engaged sentinel must fire a traveling energy shot")
+	check(get_nodes_in_group("projectiles").size() == projectile_count and reacting_sentinel.get_meta("shot_windup") > 0, "An engaged sentinel must telegraph its shot before firing")
+	reacting_sentinel.update_brain(lab.hero, true, 0.22)
+	check(get_nodes_in_group("projectiles").size() == projectile_count + 1, "A telegraphed sentinel shot must become a traveling energy projectile")
 	lab._update_sentinels(0.1)
 	var seen_count := 0
 	for sentinel in get_nodes_in_group("targets"):
@@ -158,6 +160,7 @@ func _run() -> void:
 	for sentinel in get_nodes_in_group("targets"):
 		sentinel.set_meta("shot_timer", 0.0)
 	lab._update_sentinels(0.1)
+	lab._update_sentinels(0.22)
 	for i in range(100):
 		await physics_frame
 	check(lab.health == 0 and not lab.running and lab.menu.visible, "Defeat must return to hero creation and stop play")

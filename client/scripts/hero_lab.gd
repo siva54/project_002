@@ -9,6 +9,8 @@ const VFX = preload("res://scripts/power_vfx.gd")
 const Projectile = preload("res://scripts/energy_projectile.gd")
 const COLORS := [Color("46dec6"), Color("eeaa55"), Color("ae9bff"), Color("f26b86")]
 const POWER_IDS := Catalog.POWER_IDS
+const MAX_HOSTILE_PROJECTILES := 3
+const SIGHT_REFRESH_SECONDS := 0.12
 
 var hero: CharacterBody3D
 var arena: Node3D
@@ -34,6 +36,8 @@ var relay_charge := 0.0
 var relay_complete := false
 var pickup_total := 0
 var pickups_collected := 0
+var sight_refresh := 0.0
+var sight_cache: Dictionary = {}
 var running := false
 var notice_time := 0.0
 var menu: Control
@@ -181,6 +185,8 @@ func reset_arena() -> void:
 	relay_complete = false
 	pickup_total = 0
 	pickups_collected = 0
+	sight_refresh = 0
+	sight_cache.clear()
 	for child in arena.get_children():
 		arena.remove_child(child)
 		child.queue_free()
@@ -549,12 +555,21 @@ func _fire_bolt() -> bool:
 	var query := PhysicsRayQueryParameters3D.create(hero.position + Vector3.UP * 1.25, origin, 5)
 	if not get_world_3d().direct_space_state.intersect_ray(query).is_empty():
 		origin = hero.position + Vector3.UP * 1.25
+	VFX.cast(effects, origin, COLORS[color_index])
 	_launch_orb(origin, hero.aim_point(), COLORS[color_index], false, hero)
 	_broadcast_noise(origin, 13.0)
 	return true
 
 func _launch_orb(origin: Vector3, endpoint: Vector3, color: Color, hostile: bool, owner_body: CollisionObject3D) -> Node3D:
+	if hostile:
+		var hostile_count := 0
+		for projectile in get_tree().get_nodes_in_group("projectiles"):
+			if projectile.get_meta("hostile", false):
+				hostile_count += 1
+		if hostile_count >= MAX_HOSTILE_PROJECTILES:
+			return null
 	var orb := Projectile.new()
+	orb.set_meta("hostile", hostile)
 	orb.tint = color
 	orb.direction = (endpoint - origin).normalized()
 	orb.speed = 11.0 if hostile else 24.0
@@ -726,10 +741,17 @@ func _damage_target(target: Node3D, amount: float) -> void:
 		_message("TARGET HIT  /  %d vitality remaining" % int(remaining))
 
 func _update_sentinels(delta: float) -> void:
+	sight_refresh -= delta
+	if sight_refresh <= 0:
+		sight_refresh = SIGHT_REFRESH_SECONDS
+		sight_cache.clear()
+		for target in get_tree().get_nodes_in_group("targets"):
+			if not target.is_queued_for_deletion():
+				sight_cache[target.get_instance_id()] = _sentinel_can_see(target)
 	for target in get_tree().get_nodes_in_group("targets"):
 		if target.is_queued_for_deletion():
 			continue
-		target.update_brain(hero, _sentinel_can_see(target), delta)
+		target.update_brain(hero, sight_cache.get(target.get_instance_id(), false), delta)
 
 func _sentinel_can_see(target: CharacterBody3D) -> bool:
 	if cloak_time > 0 or target.position.distance_to(hero.position) > 18.0:

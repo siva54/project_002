@@ -1,6 +1,7 @@
 extends RefCounted
 
 const SHELL_SHADER := "shader_type spatial;\nrender_mode blend_add, depth_draw_never, cull_back, unshaded;\nuniform vec4 tint : source_color = vec4(0.1,0.9,0.8,1.0);\nuniform float opacity = 0.7;\nvoid fragment(){float rim=pow(1.0-abs(dot(normalize(NORMAL),normalize(VIEW))),2.3);float ripples=0.65+0.35*sin(UV.y*55.0-TIME*12.0+sin(UV.x*30.0)*2.0);ALBEDO=tint.rgb;EMISSION=tint.rgb*1.4;ALPHA=opacity*(0.12+rim*0.8)*ripples;}"
+const MAX_TRANSIENT_EFFECTS := 14
 
 static func glow(color: Color, strength: float = 1.0) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
@@ -15,8 +16,8 @@ static func sphere(parent: Node3D, radius: float, color: Color, shell: bool = fa
 	var mesh := SphereMesh.new()
 	mesh.radius = radius
 	mesh.height = radius * 2
-	mesh.radial_segments = 24
-	mesh.rings = 12
+	mesh.radial_segments = 16
+	mesh.rings = 8
 	node.mesh = mesh
 	if shell:
 		var shader := Shader.new()
@@ -35,14 +36,14 @@ static func ring(parent: Node3D, radius: float, color: Color) -> MeshInstance3D:
 	var mesh := TorusMesh.new()
 	mesh.inner_radius = radius * 0.91
 	mesh.outer_radius = radius
-	mesh.rings = 36
-	mesh.ring_segments = 8
+	mesh.rings = 18
+	mesh.ring_segments = 6
 	node.mesh = mesh
 	node.material_override = glow(color, 1.7)
 	parent.add_child(node)
 	return node
 
-static func particles(parent: Node3D, color: Color, count: int = 22, strength: float = 3.0) -> CPUParticles3D:
+static func particles(parent: Node3D, color: Color, count: int = 12, strength: float = 3.0) -> CPUParticles3D:
 	var emitter := CPUParticles3D.new()
 	emitter.amount = count
 	emitter.lifetime = 0.55
@@ -71,27 +72,55 @@ static func particles(parent: Node3D, color: Color, count: int = 22, strength: f
 	return emitter
 
 static func burst(parent: Node3D, at: Vector3, color: Color, size: float = 1.0) -> Node3D:
+	if parent.is_inside_tree():
+		var active := parent.get_tree().get_nodes_in_group("transient_vfx")
+		while active.size() >= MAX_TRANSIENT_EFFECTS:
+			active.pop_front().queue_free()
 	var effect := Node3D.new()
 	effect.name = "ImpactVolume"
+	effect.add_to_group("transient_vfx")
 	parent.add_child(effect)
 	effect.global_position = at
 	var shell := sphere(effect, 0.3, color, true)
 	var torus := ring(effect, 0.4, color)
 	torus.rotation = Vector3(0.5, 0.3, 0.5)
-	particles(effect, color, 24, size * 4)
-	var light := OmniLight3D.new()
-	light.light_color = color
-	light.light_energy = 2.5
-	light.omni_range = size * 5
-	effect.add_child(light)
+	particles(effect, color, clampi(int(7 + size * 5), 8, 16), size * 3.2)
+	var light: OmniLight3D
+	if size >= 1.0:
+		light = OmniLight3D.new()
+		light.light_color = color
+		light.light_energy = 1.6
+		light.omni_range = size * 4.0
+		effect.add_child(light)
 	var tween := effect.create_tween().set_parallel(true)
-	tween.tween_property(shell, "scale", Vector3.ONE * size * 5, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_method(func(value: float): shell.material_override.set_shader_parameter("opacity", value), 0.7, 0.0, 0.5)
-	tween.tween_property(torus, "scale", Vector3.ONE * size * 3.5, 0.35)
-	tween.tween_property(torus, "rotation:y", 3.0, 0.45)
-	tween.tween_property(light, "light_energy", 0.0, 0.4)
+	tween.tween_property(shell, "scale", Vector3.ONE * size * 4.2, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_method(func(value: float): shell.material_override.set_shader_parameter("opacity", value), 0.7, 0.0, 0.36)
+	tween.tween_property(torus, "scale", Vector3.ONE * size * 3.0, 0.3)
+	tween.tween_property(torus, "rotation:y", 2.4, 0.34)
+	if light != null:
+		tween.tween_property(light, "light_energy", 0.0, 0.3)
 	tween.chain().tween_callback(torus.hide)
-	tween.chain().tween_interval(0.3)
+	tween.chain().tween_interval(0.16)
+	tween.chain().tween_callback(effect.queue_free)
+	return effect
+
+static func cast(parent: Node3D, at: Vector3, color: Color) -> Node3D:
+	if parent.is_inside_tree():
+		var active := parent.get_tree().get_nodes_in_group("transient_vfx")
+		while active.size() >= MAX_TRANSIENT_EFFECTS:
+			active.pop_front().queue_free()
+	var effect := Node3D.new()
+	effect.name = "CastFlash"
+	effect.add_to_group("transient_vfx")
+	parent.add_child(effect)
+	effect.global_position = at
+	var core := sphere(effect, 0.1, color, true)
+	var ring_mesh := ring(effect, 0.18, color)
+	ring_mesh.rotation.x = PI * 0.5
+	var tween := effect.create_tween().set_parallel(true)
+	tween.tween_property(core, "scale", Vector3.ONE * 2.8, 0.16)
+	tween.tween_method(func(value: float): core.material_override.set_shader_parameter("opacity", value), 0.65, 0.0, 0.18)
+	tween.tween_property(ring_mesh, "scale", Vector3.ONE * 3.2, 0.18)
 	tween.chain().tween_callback(effect.queue_free)
 	return effect
 

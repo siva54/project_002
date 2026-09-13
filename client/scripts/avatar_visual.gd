@@ -62,10 +62,10 @@ func locomotion(speed: float, grounded: bool, delta: float) -> void:
 		play("Idle")
 
 func attack() -> void:
-	attack_remaining = 0.46
+	attack_remaining = 0.5
 	active_clip = "Punch"
 	animator.speed_scale = 1.0
-	animator.play("Punch", 0.06, 1.8)
+	animator.play("Punch", 0.1, 1.35)
 	animator.seek(0, true)
 
 func set_frozen(value: bool) -> void:

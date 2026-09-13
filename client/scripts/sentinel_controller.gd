@@ -13,6 +13,7 @@ const INVESTIGATE_SPEED := 3.0
 const ENGAGE_SPEED := 3.6
 const DESIRED_RANGE := 9.0
 const SHOOT_INTERVAL := 2.6
+const SHOT_WINDUP := 0.22
 
 var state := State.PATROL
 var health := 60.0
@@ -23,6 +24,7 @@ var investigate_time := 0.0
 var search_time := 0.0
 var stagger_time := 0.0
 var shot_timer := 1.5
+var shot_windup := 0.0
 var strafe_sign := 1.0
 var visual: Node3D
 var state_label: Label3D
@@ -164,11 +166,15 @@ func _engage(hero: CharacterBody3D, visible: bool, delta: float) -> void:
 	if distance > 0.01:
 		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(forward.x, forward.z), minf(1, delta * 9.0))
 	shot_timer = maxf(0, shot_timer - delta)
-	if visible and shot_timer <= 0:
-		shot_timer = SHOOT_INTERVAL
-		strafe_sign *= -1.0
+	if shot_windup > 0:
+		shot_windup = maxf(0, shot_windup - delta)
+		if shot_windup <= 0 and visible:
+			shot_timer = SHOOT_INTERVAL
+			strafe_sign *= -1.0
+			projectile_requested.emit(position + Vector3.UP * 1.45, hero.position + Vector3.UP, self)
+	elif visible and shot_timer <= 0:
+		shot_windup = SHOT_WINDUP
 		visual.attack()
-		projectile_requested.emit(position + Vector3.UP * 1.45, hero.position + Vector3.UP, self)
 
 func _move_to(destination: Vector3, speed: float, delta: float) -> void:
 	var direction := destination - position
@@ -198,4 +204,5 @@ func _sync_metadata() -> void:
 	set_meta("last_seen", last_known_position)
 	set_meta("search_time", search_time if state == State.SEARCH else investigate_time)
 	set_meta("shot_timer", shot_timer)
+	set_meta("shot_windup", shot_windup)
 	set_meta("state", ["patrol", "investigate", "engage", "search", "stagger", "shutdown"][state])

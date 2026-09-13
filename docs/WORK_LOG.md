@@ -67,3 +67,10 @@
 - Energy Bolts, Shockwaves, melee strikes, and thrown crates can charge the relay, so different three-power builds have useful environmental interactions beyond direct damage.
 - Added four floating power cells across the arena. Jade cells restore energy, coral cells restore vitality, and each has an animated, emissive 3D presentation.
 - Verification: clean Godot editor import; **69 integration checks and 43 dedicated power/selection checks passed** headlessly. The fixed-FPS Metal capture completed with the new relay objective, and the rendered relay screen was visually reviewed at 1280 × 800.
+
+## 2026-09-13 10:00 CDT — combat feel and performance pass
+
+- Reduced the cost of combat effects by lowering procedural mesh detail, reducing burst particles, skipping small-impact lights, shortening transient lifetime, and removing CPU particles from every in-flight projectile. A global transient-effect cap prevents repeated impacts from accumulating frame work.
+- Limited the encounter to three concurrent hostile projectiles and sampled sentinel line-of-sight at 120 ms intervals, preserving reactive behavior while avoiding repeated physics queries each frame.
+- Added a brief cast flash to Energy Bolt, slowed the shared punch clip, and gave sentinel fire a 220 ms animation wind-up. The visual action now precedes the damaging projectile instead of occurring simultaneously.
+- Verification: clean Godot editor import; **70 integration checks and 43 dedicated power/selection checks passed** headlessly. Fixed-FPS Metal captures were regenerated and the Energy Bolt and melee frames were visually reviewed.

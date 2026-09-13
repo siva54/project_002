@@ -91,7 +91,7 @@ func set_appearance(color: Color, cloaked: bool) -> void:
 func play_attack() -> void:
 	var direction := aim_direction()
 	visual.rotation.y = atan2(direction.x, direction.z)
-	attack_lock = 0.38
+	attack_lock = 0.42
 	visual.attack()
 
 func muzzle_position() -> Vector3:

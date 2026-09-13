@@ -15,18 +15,12 @@ func _ready() -> void:
 	add_to_group("projectiles")
 	VFX.sphere(self, 0.12, tint.lightened(0.5))
 	shell = VFX.sphere(self, 0.3, tint, true)
-	var orbit := VFX.ring(self, 0.25, tint)
+	var orbit := VFX.ring(self, 0.22, tint)
 	orbit.rotation.x = PI / 2
-	var sparks := VFX.particles(self, tint, 18, 0.8)
-	sparks.one_shot = false
-	sparks.explosiveness = 0
-	sparks.lifetime = 0.22
-	sparks.gravity = Vector3.ZERO
-	sparks.local_coords = false
 	var light := OmniLight3D.new()
 	light.light_color = tint
-	light.light_energy = 1.8
-	light.omni_range = 3.5
+	light.light_energy = 0.75
+	light.omni_range = 2.4
 	add_child(light)
 
 func _physics_process(delta: float) -> void:

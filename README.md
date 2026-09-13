@@ -46,6 +46,8 @@ The hero and sentinels use a free, rigged Quaternius robot with imported idle, w
 
 This remains a mechanics POC with a stylized robot and a simple training arena. Appearance customization is color selection. There is no detailed character sculpting, audio, campaign, progression, controller support, or saved loadout yet. Selections persist only during the current session. Sentinel navigation is direct local steering with patrol, investigate, search, stagger, and engage states; it does not yet use pathfinding, tactical cover selection, coordinated formations, or melee attacks. Walking and running blend imported animation clips; advanced foot placement and terrain IK are not implemented.
 
+Effects are intentionally bounded for a smooth playground loop: transient impact volumes are capped, projectiles do not run CPU particle emitters, only three enemy shots may be in flight, and sight checks refresh at 120 ms. Enemy shots have a short visible wind-up before firing.
+
 The intended starting window is 1280 × 800. Godot `4.7.2.stable.official.ed1daf0bf` was used for verification on this Mac.
 
 ## Checks
@@ -58,7 +60,7 @@ godot --path client --script res://tests/capture.gd
 godot --path client --fixed-fps 60 --script res://tests/capture_actions.gd
 ```
 
-The automated suite checks loadouts, energy and cooldowns, cloak behavior, traveling projectile damage, physical thrown-crate impact, Blink collision and ground travel, reset, defeat, movement and animation selection, jumping, melee timing, pause including in-flight attacks, reactive sentinel behavior, pickups, and relay charging/rewards. The dedicated power suite also checks all twenty builds, empty/incomplete selection rejection, Shockwave range and cover, Shield expiry and damage blocking, and cleanup when changing powers. The capture command opens a temporary rendered window, saves images to `docs/qa/`, and exits.
+The automated suite checks loadouts, energy and cooldowns, cloak behavior, traveling projectile damage, physical thrown-crate impact, Blink collision and ground travel, reset, defeat, movement and animation selection, jumping, melee timing, pause including in-flight attacks, reactive sentinel behavior, shot telegraphing, pickups, and relay charging/rewards. The dedicated power suite also checks all twenty builds, empty/incomplete selection rejection, Shockwave range and cover, Shield expiry and damage blocking, and cleanup when changing powers. The capture command opens a temporary rendered window, saves images to `docs/qa/`, and exits.
 
 Read [the concept and prototype scope](docs/CONCEPT.md) for the proposed direction, milestones, and research references. Decisions in that document are proposals unless explicitly marked as confirmed.
 
