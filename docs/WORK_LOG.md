@@ -60,3 +60,10 @@
 - Direct hits now preserve health state, play a stagger response, notify nearby sentinels, and leave a short visible shutdown before removal. Bolts, melee, Shockwave, Blink, and Telekinesis all report noise through the same encounter reaction path.
 - Updated the player-facing scope and controls notes so the actual behavior and remaining tactical limits are clear.
 - Verification: clean Godot editor import; **64 integration checks and 43 dedicated power/selection checks passed** headlessly. The macOS Metal renderer completed the fixed-FPS action capture run successfully, and its regenerated gameplay captures were visually reviewed.
+
+## 2026-09-13 09:00 CDT — objectives and exploration content
+
+- Added a central Power Relay with an animated 3D core, in-world status label, HUD progress, and a concrete reward: full energy plus 30 vitality when it reaches 100% charge.
+- Energy Bolts, Shockwaves, melee strikes, and thrown crates can charge the relay, so different three-power builds have useful environmental interactions beyond direct damage.
+- Added four floating power cells across the arena. Jade cells restore energy, coral cells restore vitality, and each has an animated, emissive 3D presentation.
+- Verification: clean Godot editor import; **69 integration checks and 43 dedicated power/selection checks passed** headlessly. The fixed-FPS Metal capture completed with the new relay objective, and the rendered relay screen was visually reviewed at 1280 × 800.

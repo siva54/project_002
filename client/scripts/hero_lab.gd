@@ -27,6 +27,13 @@ var shield_time := 0.0
 var melee_cooldown := 0.0
 var melee_windup := 0.0
 var score := 0
+var relay: StaticBody3D
+var relay_core: Node3D
+var relay_label: Label3D
+var relay_charge := 0.0
+var relay_complete := false
+var pickup_total := 0
+var pickups_collected := 0
 var running := false
 var notice_time := 0.0
 var menu: Control
@@ -167,6 +174,13 @@ func reset_arena() -> void:
 	melee_cooldown = 0
 	melee_windup = 0
 	held_prop = null
+	relay = null
+	relay_core = null
+	relay_label = null
+	relay_charge = 0
+	relay_complete = false
+	pickup_total = 0
+	pickups_collected = 0
 	for child in arena.get_children():
 		arena.remove_child(child)
 		child.queue_free()
@@ -174,6 +188,11 @@ func reset_arena() -> void:
 		child.queue_free()
 	for at in [Vector3(-3, 1, 3), Vector3(3, 1, 4), Vector3(5, 1, -6), Vector3(-3, 1, -8)]:
 		_create_prop(at)
+	_create_relay(Vector3(0, 0, -10.5))
+	_create_pickup(Vector3(-15, 0.7, 10), "energy")
+	_create_pickup(Vector3(15, 0.7, 10), "vitality")
+	_create_pickup(Vector3(-16, 0.7, -12), "energy")
+	_create_pickup(Vector3(16, 0.7, -12), "vitality")
 	var sentinel_spawns := [Vector3(0, 0, -3), Vector3(9, 0, -12), Vector3(-3, 0, -15), Vector3(-10, 3, -5), Vector3(14, 0, 4)]
 	for index in sentinel_spawns.size():
 		_create_target(sentinel_spawns[index], index)
@@ -223,6 +242,91 @@ func _create_prop(at: Vector3) -> void:
 	body.add_child(collision)
 	body.body_entered.connect(_prop_contact.bind(body))
 
+func _create_relay(at: Vector3) -> void:
+	relay = StaticBody3D.new()
+	relay.name = "PowerRelay"
+	relay.add_to_group("relay")
+	arena.add_child(relay)
+	relay.position = at
+	var collision := CollisionShape3D.new()
+	var shape := CylinderShape3D.new()
+	shape.radius = 1.35
+	shape.height = 3.0
+	collision.shape = shape
+	collision.position.y = 1.5
+	relay.add_child(collision)
+	var base := MeshInstance3D.new()
+	var base_mesh := CylinderMesh.new()
+	base_mesh.top_radius = 1.2
+	base_mesh.bottom_radius = 1.55
+	base_mesh.height = 0.75
+	base.mesh = base_mesh
+	base.position.y = 0.38
+	base.material_override = Surfaces.pbr("metal", Color("526979"), 1.1)
+	relay.add_child(base)
+	var tower := MeshInstance3D.new()
+	var tower_mesh := CylinderMesh.new()
+	tower_mesh.top_radius = 0.34
+	tower_mesh.bottom_radius = 0.68
+	tower_mesh.height = 2.2
+	tower.mesh = tower_mesh
+	tower.position.y = 1.5
+	tower.material_override = Surfaces.pbr("metal", Color("405466"), 0.8)
+	relay.add_child(tower)
+	relay_core = Node3D.new()
+	relay_core.name = "RelayCore"
+	relay.add_child(relay_core)
+	relay_core.position.y = 1.7
+	VFX.sphere(relay_core, 0.45, Color("4ebccf"), true)
+	var core_ring := VFX.ring(relay_core, 0.64, Color("4ebccf"))
+	core_ring.rotation.x = PI * 0.5
+	var light := OmniLight3D.new()
+	light.name = "CoreLight"
+	light.light_color = Color("4ebccf")
+	light.light_energy = 1.2
+	light.omni_range = 5.0
+	relay_core.add_child(light)
+	relay_label = Label3D.new()
+	relay_label.name = "RelayLabel"
+	relay_label.position.y = 3.4
+	relay_label.font_size = 27
+	relay_label.pixel_size = 0.009
+	relay_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	relay.add_child(relay_label)
+	_refresh_relay()
+
+func _create_pickup(at: Vector3, kind: String) -> void:
+	var pickup := Node3D.new()
+	pickup.name = "EnergyCell" if kind == "energy" else "VitalCell"
+	pickup.add_to_group("pickups")
+	pickup.set_meta("kind", kind)
+	pickup.set_meta("base_y", at.y)
+	arena.add_child(pickup)
+	pickup.position = at
+	var color := Color("54e8d0") if kind == "energy" else Color("ff8e9c")
+	var crystal := MeshInstance3D.new()
+	var crystal_mesh := PrismMesh.new()
+	crystal_mesh.left_to_right = 0.45
+	crystal_mesh.size = Vector3(0.55, 0.95, 0.55)
+	crystal.mesh = crystal_mesh
+	crystal.material_override = VFX.glow(color, 2.0)
+	pickup.add_child(crystal)
+	VFX.ring(pickup, 0.55, color)
+	var light := OmniLight3D.new()
+	light.light_color = color
+	light.light_energy = 0.7
+	light.omni_range = 3.0
+	pickup.add_child(light)
+	var label := Label3D.new()
+	label.text = "ENERGY +30" if kind == "energy" else "VITALITY +25"
+	label.position.y = 1.25
+	label.font_size = 22
+	label.pixel_size = 0.008
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.modulate = color
+	pickup.add_child(label)
+	pickup_total += 1
+
 func _create_target(at: Vector3, index: int) -> void:
 	var body := Sentinel.new()
 	body.name = "Sentinel_%d" % (index + 1)
@@ -244,6 +348,68 @@ func _prop_contact(other: Node, prop: RigidBody3D) -> void:
 		_damage_target(other, 60.0)
 		_broadcast_noise(prop.position, 15.0, other)
 		_message("KINETIC IMPACT  /  Target disabled")
+	elif other.is_in_group("relay"):
+		_energize_relay(45.0, "KINETIC IMPACT")
+
+func _update_pickups(delta: float) -> void:
+	for pickup in get_tree().get_nodes_in_group("pickups"):
+		if pickup.is_queued_for_deletion():
+			continue
+		pickup.rotation.y += delta * 2.2
+		pickup.position.y = float(pickup.get_meta("base_y")) + sin(Time.get_ticks_msec() * 0.004 + pickup.position.x) * 0.12
+		if hero.position.distance_to(pickup.position) > 1.4:
+			continue
+		var kind: String = pickup.get_meta("kind")
+		var color := Color("54e8d0") if kind == "energy" else Color("ff8e9c")
+		if kind == "energy":
+			energy = minf(Catalog.MAX_ENERGY, energy + 30.0)
+			_message("ENERGY CELL  /  +30 energy")
+		else:
+			health = minf(100.0, health + 25.0)
+			_message("VITAL CELL  /  +25 vitality")
+		pickups_collected += 1
+		VFX.burst(effects, pickup.position + Vector3.UP * 0.35, color, 0.8)
+		pickup.queue_free()
+
+func _update_relay(delta: float) -> void:
+	if not is_instance_valid(relay_core):
+		return
+	relay_core.rotation.y += delta * (0.75 + relay_charge * 0.02)
+	var pulse := 1.0 + sin(Time.get_ticks_msec() * 0.006) * 0.05
+	relay_core.scale = Vector3.ONE * pulse * (1.0 + relay_charge * 0.0015)
+
+func _energize_relay(amount: float, source: String) -> void:
+	if relay_complete or not is_instance_valid(relay):
+		return
+	var before := relay_charge
+	relay_charge = minf(100.0, relay_charge + amount)
+	if is_equal_approx(before, relay_charge):
+		return
+	VFX.burst(effects, relay.position + Vector3.UP * 1.7, Color("70e8e0"), 0.9 + amount * 0.01)
+	_broadcast_noise(relay.position, 16.0)
+	if relay_charge >= 100.0:
+		relay_complete = true
+	_refresh_relay()
+	if relay_complete:
+		energy = Catalog.MAX_ENERGY
+		health = minf(100.0, health + 30.0)
+		VFX.burst(effects, relay.position + Vector3.UP * 1.7, Color("c4ff86"), 2.0)
+		_message("POWER RELAY ONLINE  /  Energy restored. +30 vitality.", 6.0)
+	else:
+		_message("%s  /  Relay charge %d%%" % [source, int(relay_charge)])
+
+func _refresh_relay() -> void:
+	if not is_instance_valid(relay):
+		return
+	relay.set_meta("charge", relay_charge)
+	relay.set_meta("complete", relay_complete)
+	if is_instance_valid(relay_label):
+		relay_label.text = "POWER RELAY  /  ONLINE" if relay_complete else "POWER RELAY  /  %d%%" % int(relay_charge)
+		relay_label.modulate = Color("c4ff86") if relay_complete else Color("72dce2")
+	if is_instance_valid(relay_core):
+		var light: OmniLight3D = relay_core.get_node("CoreLight")
+		light.light_color = Color("c4ff86") if relay_complete else Color("4ebccf")
+		light.light_energy = 1.2 + relay_charge * 0.018
 
 func _physics_process(delta: float) -> void:
 	if not running:
@@ -282,6 +448,8 @@ func _physics_process(delta: float) -> void:
 		kinetic_aura.global_position = held_prop.global_position
 	if is_instance_valid(cloak_aura):
 		cloak_aura.global_position = hero.position + Vector3.UP
+	_update_pickups(delta)
+	_update_relay(delta)
 	_update_sentinels(delta)
 	notice_time -= delta
 	if notice_time <= 0:
@@ -359,6 +527,13 @@ func _shockwave() -> bool:
 					_damage_target(body, Catalog.SHOCKWAVE_DAMAGE)
 				else:
 					body.apply_central_impulse(offset.normalized() * 22 + Vector3.UP * 7)
+	if not relay_complete and is_instance_valid(relay):
+		var relay_center := relay.position + Vector3.UP * 1.5
+		if origin.distance_to(relay_center) <= Catalog.SHOCKWAVE_RADIUS:
+			var relay_ray := PhysicsRayQueryParameters3D.create(origin, relay_center, 5)
+			var relay_hit := get_world_3d().direct_space_state.intersect_ray(relay_ray)
+			if not relay_hit.is_empty() and relay_hit.collider == relay:
+				_energize_relay(30.0, "SHOCKWAVE")
 	_message("SHOCKWAVE  /  Exposed enemies hit. Nearby crates launched.")
 	return true
 
@@ -402,6 +577,8 @@ func _orb_impact(body: Node, at: Vector3, hostile: bool, color: Color, direction
 			if health <= 0:
 				show_menu()
 				status_label.text = "Hero down. Reset the arena to try a new combination."
+	elif body.is_in_group("relay"):
+		_energize_relay(25.0, "ENERGY BOLT")
 	elif body.is_in_group("targets"):
 		_damage_target(body, 30)
 	elif body is RigidBody3D:
@@ -432,6 +609,13 @@ func _resolve_melee() -> void:
 		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
 		if not hit.is_empty() and hit.collider == target:
 			_damage_target(target, 30)
+	if not relay_complete and is_instance_valid(relay):
+		var relay_offset: Vector3 = relay.position + Vector3.UP - origin
+		if relay_offset.length() <= 2.7 and relay_offset.normalized().dot(forward) >= 0.45:
+			var relay_ray := PhysicsRayQueryParameters3D.create(origin, relay.position + Vector3.UP, 5)
+			var relay_hit := get_world_3d().direct_space_state.intersect_ray(relay_ray)
+			if not relay_hit.is_empty() and relay_hit.collider == relay:
+				_energize_relay(12.0, "MELEE STRIKE")
 
 func _clear_aura(kind: String) -> void:
 	var aura: Node3D = kinetic_aura if kind == "kinetic" else cloak_aura
@@ -536,7 +720,7 @@ func _damage_target(target: Node3D, amount: float) -> void:
 		shutdown.tween_interval(0.55)
 		shutdown.tween_callback(target.queue_free)
 		if score == 5:
-			_message("ALL FIVE DISABLED  /  Esc to change your build or reset", 60)
+			_message("ALL FIVE DISABLED  /  Charge the power relay or Esc to change your build", 60)
 	else:
 		_broadcast_noise(target.position, 16.0, target)
 		_message("TARGET HIT  /  %d vitality remaining" % int(remaining))
@@ -835,7 +1019,7 @@ func start_play() -> void:
 	menu.hide()
 	hud.show()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	_message("DISABLE FIVE SENTINELS  /  Mix powers. Find your approach.", 6)
+	_message("DISABLE FIVE SENTINELS  /  Collect cells and charge the power relay.", 6)
 
 func _message(text: String, duration: float = 3.0) -> void:
 	notice.text = text
@@ -846,7 +1030,7 @@ func _update_hud() -> void:
 		return
 	energy_bar.value = energy
 	health_bar.value = health
-	score_label.text = "%d / 5 SENTINELS DISABLED%s" % [score, "   ·   CLOAKED %.1fs" % cloak_time if cloak_time > 0 else ""]
+	score_label.text = "%d / 5 SENTINELS DISABLED   ·   RELAY %s   ·   CELLS %d / %d%s" % [score, "ONLINE" if relay_complete else "%d%%" % int(relay_charge), pickups_collected, pickup_total, "   ·   CLOAKED %.1fs" % cloak_time if cloak_time > 0 else ""]
 	if shield_time > 0:
 		score_label.text += "   ·   SHIELD %.1fs" % shield_time
 	for i in range(slot_labels.size()):

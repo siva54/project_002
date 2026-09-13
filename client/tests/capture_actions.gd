@@ -82,6 +82,12 @@ func _capture() -> void:
 	lab.activate_slot(1)
 	await frames(14)
 	await save_frame("shockwave")
+	lab.reset_arena()
+	observer.position = Vector3(7, 4.5, -2)
+	observer.look_at(Vector3(0, 1.5, -10.5))
+	lab._energize_relay(70.0, "ENERGY BOLT")
+	await frames(8)
+	await save_frame("power-relay")
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	print("Captured movement, attacks, and all six power effects.")
+	print("Captured movement, attacks, six power effects, and the relay objective.")
 	quit()

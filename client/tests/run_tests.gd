@@ -104,6 +104,25 @@ func _run() -> void:
 		await physics_frame
 	check(lab.score == 0 and lab.health == 100 and lab.energy == 100, "Reset restores hero resources and score")
 	check(get_nodes_in_group("targets").size() == 5 and get_nodes_in_group("props").size() == 4, "Reset must rebuild without duplicate entities")
+	check(get_nodes_in_group("relay").size() == 1 and get_nodes_in_group("pickups").size() == 4, "Reset must rebuild the relay objective and four power cells")
+	var energy_cell = get_nodes_in_group("pickups").filter(func(pickup): return pickup.get_meta("kind") == "energy")[0]
+	lab.energy = 40
+	lab.hero.position = energy_cell.position
+	lab._update_pickups(0.1)
+	check(lab.energy == 70 and energy_cell.is_queued_for_deletion(), "An Energy Cell must restore energy when the hero reaches it")
+	var vital_cell = get_nodes_in_group("pickups").filter(func(pickup): return pickup.get_meta("kind") == "vitality")[0]
+	lab.health = 50
+	lab.hero.position = vital_cell.position
+	lab._update_pickups(0.1)
+	check(lab.health == 75 and vital_cell.is_queued_for_deletion(), "A Vital Cell must restore vitality when the hero reaches it")
+	lab.energy = 25
+	lab._orb_impact(lab.relay, lab.relay.position + Vector3.UP, false, Color.CYAN, Vector3.FORWARD)
+	check(lab.relay.get_meta("charge") == 25 and not lab.relay.get_meta("complete"), "An Energy Bolt impact must build visible relay charge")
+	lab._energize_relay(75.0, "TEST")
+	check(lab.relay_complete and lab.energy == 100 and lab.health == 100, "Completing the relay must restore energy and grant vitality")
+	lab.reset_arena()
+	for i in range(3):
+		await physics_frame
 	var reacting_sentinel = get_nodes_in_group("targets")[0]
 	var patrol_start: Vector3 = reacting_sentinel.position
 	for i in range(15):

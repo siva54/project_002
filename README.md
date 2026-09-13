@@ -2,7 +2,7 @@
 
 An original third-person superpower action game inspired by the character-building freedom of Project Awakened.
 
-Status: **Hero Lab — Prototype 03**, a playable Godot power playground with animated characters, textured materials, melee, and 3D energy effects.
+Status: **Hero Lab — Prototype 04**, a playable Godot power playground with animated characters, reactive opponents, objectives, collectibles, and 3D energy effects.
 
 ## Play
 
@@ -14,7 +14,7 @@ godot --path client
 
 You can also open `client/project.godot` in Godot 4 and press F6 with the hero lab scene open, or F5 to run the project.
 
-The game opens with three empty slots. Choose exactly three of the six powers below; Enter becomes available only when all three slots are filled. Cards and the loadout preview show the assigned keys (1, 2, 3) in selection order. Click a selected card to remove it, then choose a replacement. You can also choose a signature color. Enter the playground and disable five sentinels; Esc pauses and reopens your build.
+The game opens with three empty slots. Choose exactly three of the six powers below; Enter becomes available only when all three slots are filled. Cards and the loadout preview show the assigned keys (1, 2, 3) in selection order. Click a selected card to remove it, then choose a replacement. You can also choose a signature color. Enter the playground to disable five sentinels, collect power cells, and charge the central relay; Esc pauses and reopens your build.
 
 | Power | What it does |
 | --- | --- |
@@ -36,7 +36,9 @@ All twenty distinct three-power combinations are available. For example, Shield 
 | F | Melee punch (short windup and cooldown) |
 | Esc | Open hero creation and pause |
 
-Energy regenerates. Telekinesis grabs amber crates; pressing its key again throws the held crate. Two energy orbs, two melee punches, or one thrown crate disable a sentinel. Cloak lasts five seconds and breaks when attacking. Sentinels patrol while unaware, investigate sounds from powers and thrown crates, alert nearby allies when hit, then pursue and strafe at combat range when they see the hero. A hit causes a visible stagger; a lethal hit leaves a short shutdown pose before the sentinel clears. Their projectiles travel through space and can be dodged; already-fired attacks can still hit a cloaked hero. Reset restores health, resources, crates, and sentinels.
+Energy regenerates. Telekinesis grabs amber crates; pressing its key again throws the held crate. Two energy orbs, two melee punches, or one thrown crate disable a sentinel. Cloak lasts five seconds and breaks when attacking. Sentinels patrol while unaware, investigate sounds from powers and thrown crates, alert nearby allies when hit, then pursue and strafe at combat range when they see the hero. A hit causes a visible stagger; a lethal hit leaves a short shutdown pose before the sentinel clears. Their projectiles travel through space and can be dodged; already-fired attacks can still hit a cloaked hero.
+
+Four cells are placed in the arena: jade cells restore 30 energy and coral cells restore 25 vitality. The central Power Relay takes charge from Energy Bolts (25%), Shockwaves (30%), melee strikes (12%), and thrown crates (45%). Bringing it to 100% restores all energy and adds 30 vitality. The HUD and the 3D relay label show objective progress. Reset restores enemies, pickups, relay charge, health, and resources.
 
 ## Current limits
 
@@ -56,7 +58,7 @@ godot --path client --script res://tests/capture.gd
 godot --path client --fixed-fps 60 --script res://tests/capture_actions.gd
 ```
 
-The automated suite checks loadouts, energy and cooldowns, cloak behavior, traveling projectile damage, physical thrown-crate impact, Blink collision and ground travel, reset, defeat, movement and animation selection, jumping, melee timing, pause including in-flight attacks, and sentinel patrol, investigation, hit staggering, ally alerts, and enemy fire. The dedicated power suite also checks all twenty builds, empty/incomplete selection rejection, Shockwave range and cover, Shield expiry and damage blocking, and cleanup when changing powers. The capture command opens a temporary rendered window, saves images to `docs/qa/`, and exits.
+The automated suite checks loadouts, energy and cooldowns, cloak behavior, traveling projectile damage, physical thrown-crate impact, Blink collision and ground travel, reset, defeat, movement and animation selection, jumping, melee timing, pause including in-flight attacks, reactive sentinel behavior, pickups, and relay charging/rewards. The dedicated power suite also checks all twenty builds, empty/incomplete selection rejection, Shockwave range and cover, Shield expiry and damage blocking, and cleanup when changing powers. The capture command opens a temporary rendered window, saves images to `docs/qa/`, and exits.
 
 Read [the concept and prototype scope](docs/CONCEPT.md) for the proposed direction, milestones, and research references. Decisions in that document are proposals unless explicitly marked as confirmed.
 
