@@ -62,7 +62,10 @@ func _run() -> void:
 	lab._fire_bolt()
 	for i in range(45):
 		await physics_frame
-	check(lab.score == 1 and get_nodes_in_group("targets").size() == 4, "Two bolts disable a sentinel and award one score")
+	check(lab.score == 1, "Two bolts must disable a sentinel and award one score")
+	for i in range(40):
+		await physics_frame
+	check(get_nodes_in_group("targets").size() == 4, "A disabled sentinel must finish its visible shutdown before leaving the arena")
 	var origin := Vector3(19, 0.05, 10)
 	var safe: Vector3 = lab.find_blink_destination(origin, Vector3.RIGHT, 8)
 	check(safe.x < 21.2 and safe.x >= origin.x, "Blink body sweep must stop before the perimeter wall")
@@ -93,11 +96,34 @@ func _run() -> void:
 	for i in range(30):
 		await physics_frame
 	check(lab.score == 2, "A thrown crate must physically collide with and disable a sentinel")
+	for i in range(40):
+		await physics_frame
+	check(get_nodes_in_group("targets").size() == 3, "A crate-disabled sentinel must complete its shutdown")
 	lab.reset_arena()
 	for i in range(3):
 		await physics_frame
 	check(lab.score == 0 and lab.health == 100 and lab.energy == 100, "Reset restores hero resources and score")
 	check(get_nodes_in_group("targets").size() == 5 and get_nodes_in_group("props").size() == 4, "Reset must rebuild without duplicate entities")
+	var reacting_sentinel = get_nodes_in_group("targets")[0]
+	var patrol_start: Vector3 = reacting_sentinel.position
+	for i in range(15):
+		reacting_sentinel.update_brain(lab.hero, false, 1.0 / 60.0)
+		await physics_frame
+	check(reacting_sentinel.position.distance_to(patrol_start) > 0.1, "Sentinels must walk their patrol routes when unaware")
+	reacting_sentinel.hear_noise(reacting_sentinel.position + Vector3(3, 0, 0), 6.0)
+	check(reacting_sentinel.get_meta("state") == "investigate", "Nearby powers must put a sentinel into investigation")
+	reacting_sentinel.take_damage(30, lab.hero.position)
+	check(reacting_sentinel.get_meta("state") == "stagger" and reacting_sentinel.get_meta("health") == 30, "A nonlethal hit must stagger a sentinel and preserve its remaining health")
+	var alerted_allies := 0
+	for sentinel in get_nodes_in_group("targets"):
+		if sentinel != reacting_sentinel and sentinel.get_meta("state") == "investigate":
+			alerted_allies += 1
+	check(alerted_allies > 0, "A hit sentinel must alert nearby allies to the attacker position")
+	reacting_sentinel.update_brain(lab.hero, true, 0.5)
+	reacting_sentinel.set_meta("shot_timer", 0.0)
+	var projectile_count := get_nodes_in_group("projectiles").size()
+	reacting_sentinel.update_brain(lab.hero, true, 0.1)
+	check(get_nodes_in_group("projectiles").size() == projectile_count + 1, "An engaged sentinel must fire a traveling energy shot")
 	lab._update_sentinels(0.1)
 	var seen_count := 0
 	for sentinel in get_nodes_in_group("targets"):

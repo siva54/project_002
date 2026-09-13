@@ -53,3 +53,10 @@
 - Updated capture tools to explicitly choose their test builds, added selected-build/Shield/Shockwave screenshots, and updated the README and concept notes.
 - Validation: clean Godot editor import; **57 existing integration checks and 43 dedicated power/selection checks passed** in both headless and rendered runs. Coverage includes all twenty distinct builds, initial empty/incomplete selection rejection, actual incoming-projectile blocking, Shield expiry, Shockwave range and cover, crate movement, and swapping/reset cleanup.
 - Visually reviewed the initial and selected three-slot screens plus both new effects at 1280 × 800. Preparing this update for commit and push to `origin/main` under the owner's existing instruction.
+
+## 2026-09-12 22:00 CDT — reactive sentinel combat playground
+
+- Replaced static target logic with reusable `SentinelController` actors. Each sentinel now patrols, investigates nearby power/crate noise, searches a last-known location after losing sight, maintains combat distance while strafing, and fires a physical energy projectile when engaged.
+- Direct hits now preserve health state, play a stagger response, notify nearby sentinels, and leave a short visible shutdown before removal. Bolts, melee, Shockwave, Blink, and Telekinesis all report noise through the same encounter reaction path.
+- Updated the player-facing scope and controls notes so the actual behavior and remaining tactical limits are clear.
+- Verification: clean Godot editor import; **64 integration checks and 43 dedicated power/selection checks passed** headlessly. The macOS Metal renderer completed the fixed-FPS action capture run successfully, and its regenerated gameplay captures were visually reviewed.

@@ -2,6 +2,7 @@ extends Node3D
 
 const Catalog = preload("res://scripts/power_catalog.gd")
 const Hero = preload("res://scripts/hero_controller.gd")
+const Sentinel = preload("res://scripts/sentinel_controller.gd")
 const Avatar = preload("res://scripts/avatar_visual.gd")
 const Surfaces = preload("res://scripts/surface_library.gd")
 const VFX = preload("res://scripts/power_vfx.gd")
@@ -173,8 +174,9 @@ func reset_arena() -> void:
 		child.queue_free()
 	for at in [Vector3(-3, 1, 3), Vector3(3, 1, 4), Vector3(5, 1, -6), Vector3(-3, 1, -8)]:
 		_create_prop(at)
-	for at in [Vector3(0, 0, -3), Vector3(9, 0, -12), Vector3(-3, 0, -15), Vector3(-10, 3, -5), Vector3(14, 0, 4)]:
-		_create_target(at)
+	var sentinel_spawns := [Vector3(0, 0, -3), Vector3(9, 0, -12), Vector3(-3, 0, -15), Vector3(-10, 3, -5), Vector3(14, 0, 4)]
+	for index in sentinel_spawns.size():
+		_create_target(sentinel_spawns[index], index)
 	hero.position = Vector3(0, 0.05, 10)
 	hero.velocity = Vector3.ZERO
 	hero.attack_lock = 0
@@ -191,7 +193,7 @@ func reset_arena() -> void:
 	hero.set_appearance(COLORS[color_index], false)
 	if not running:
 		for target in get_tree().get_nodes_in_group("targets"):
-			target.get_node("Avatar").set_frozen(true)
+			target.set_frozen(true)
 	_update_hud()
 
 func _create_prop(at: Vector3) -> void:
@@ -221,35 +223,17 @@ func _create_prop(at: Vector3) -> void:
 	body.add_child(collision)
 	body.body_entered.connect(_prop_contact.bind(body))
 
-func _create_target(at: Vector3) -> void:
-	var body := StaticBody3D.new()
-	body.collision_layer = 4
+func _create_target(at: Vector3, index: int) -> void:
+	var body := Sentinel.new()
+	body.name = "Sentinel_%d" % (index + 1)
 	body.add_to_group("targets")
-	body.set_meta("health", 60.0)
-	body.set_meta("shot_timer", 3.0)
-	body.set_meta("last_seen", Vector3.ZERO)
-	body.set_meta("search_time", 0.0)
 	arena.add_child(body)
-	body.position = at
-	var collision := CollisionShape3D.new()
-	var shape := CapsuleShape3D.new()
-	shape.radius = 0.55
-	shape.height = 2.1
-	collision.shape = shape
-	collision.position.y = 1.1
-	body.add_child(collision)
-	var visual := Avatar.new()
-	visual.name = "Avatar"
-	body.add_child(visual)
-	visual.set_appearance(Color("ca5366"), false)
-	var label := Label3D.new()
-	label.name = "StateLabel"
-	label.text = "SENTINEL"
-	label.position.y = 2.5
-	label.font_size = 30
-	label.pixel_size = 0.009
-	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	body.add_child(label)
+	var patrol := [at + Vector3(-2.2, 0, 0.8), at + Vector3(2.2, 0, -0.8)]
+	if index == 3:
+		patrol = [at + Vector3(-1.5, 0, 0), at + Vector3(1.5, 0, 0)]
+	body.setup(at, patrol, 1.5 + index * 0.35)
+	body.projectile_requested.connect(_sentinel_projectile)
+	body.alerted.connect(_sentinel_alerted)
 
 func _prop_contact(other: Node, prop: RigidBody3D) -> void:
 	if not prop.get_meta("thrown", false):
@@ -258,6 +242,7 @@ func _prop_contact(other: Node, prop: RigidBody3D) -> void:
 	VFX.burst(effects, prop.position, COLORS[color_index], 0.9)
 	if other.is_in_group("targets"):
 		_damage_target(other, 60.0)
+		_broadcast_noise(prop.position, 15.0, other)
 		_message("KINETIC IMPACT  /  Target disabled")
 
 func _physics_process(delta: float) -> void:
@@ -358,6 +343,7 @@ func _shockwave() -> bool:
 	hero.play_attack()
 	var origin: Vector3 = hero.position + Vector3.UP
 	VFX.shockwave(effects, hero.position, Catalog.SHOCKWAVE_RADIUS)
+	_broadcast_noise(hero.position, 18.0)
 	for group in ["targets", "props"]:
 		for body in get_tree().get_nodes_in_group(group):
 			if body.is_queued_for_deletion() or body == held_prop:
@@ -389,6 +375,7 @@ func _fire_bolt() -> bool:
 	if not get_world_3d().direct_space_state.intersect_ray(query).is_empty():
 		origin = hero.position + Vector3.UP * 1.25
 	_launch_orb(origin, hero.aim_point(), COLORS[color_index], false, hero)
+	_broadcast_noise(origin, 13.0)
 	return true
 
 func _launch_orb(origin: Vector3, endpoint: Vector3, color: Color, hostile: bool, owner_body: CollisionObject3D) -> Node3D:
@@ -436,6 +423,7 @@ func _resolve_melee() -> void:
 	forward.y = 0
 	forward = forward.normalized()
 	VFX.burst(effects, origin + forward * 1.0, COLORS[color_index], 0.55)
+	_broadcast_noise(origin, 7.0)
 	for target in get_tree().get_nodes_in_group("targets"):
 		var offset: Vector3 = target.position + Vector3.UP - origin
 		if offset.length() > 2.3 or offset.normalized().dot(forward) < 0.45:
@@ -464,6 +452,7 @@ func _blink() -> bool:
 	hero.velocity = Vector3.ZERO
 	VFX.blink(effects, origin, Color("ae9bff"))
 	VFX.blink(effects, destination, Color("ae9bff"))
+	_broadcast_noise(destination, 5.0)
 	_message("BLINK  /  Position shifted")
 	return true
 
@@ -522,6 +511,7 @@ func _throw_prop() -> void:
 	prop.freeze = false
 	prop.set_meta("thrown", true)
 	prop.linear_velocity = (hero.aim_point() - prop.position).normalized() * 28
+	_broadcast_noise(prop.position, 12.0)
 	_message("TELEKINESIS  /  Crate launched")
 
 func _drop_prop() -> void:
@@ -536,50 +526,48 @@ func _drop_prop() -> void:
 func _damage_target(target: Node3D, amount: float) -> void:
 	if target.is_queued_for_deletion():
 		return
-	var remaining: float = target.get_meta("health") - amount
-	target.set_meta("health", remaining)
-	if remaining <= 0:
+	var destroyed: bool = target.take_damage(amount, hero.position)
+	var remaining: float = target.health
+	if destroyed:
 		score += 1
 		VFX.burst(effects, target.position + Vector3.UP, Color("f6bb66"), 1.5)
-		target.queue_free()
+		_broadcast_noise(target.position, 18.0, target)
+		var shutdown := create_tween()
+		shutdown.tween_interval(0.55)
+		shutdown.tween_callback(target.queue_free)
 		if score == 5:
 			_message("ALL FIVE DISABLED  /  Esc to change your build or reset", 60)
 	else:
+		_broadcast_noise(target.position, 16.0, target)
 		_message("TARGET HIT  /  %d vitality remaining" % int(remaining))
 
 func _update_sentinels(delta: float) -> void:
 	for target in get_tree().get_nodes_in_group("targets"):
 		if target.is_queued_for_deletion():
 			continue
-		var origin: Vector3 = target.position + Vector3.UP * 1.5
-		var destination: Vector3 = hero.position + Vector3.UP
-		var visible := cloak_time <= 0 and origin.distance_to(destination) < 18
-		if visible:
-			var ray := PhysicsRayQueryParameters3D.create(origin, destination, 7)
-			ray.exclude = [target.get_rid()]
-			var hit := get_world_3d().direct_space_state.intersect_ray(ray)
-			visible = not hit.is_empty() and hit.collider == hero
-		var visual: Node3D = target.get_node("Avatar")
-		visual.locomotion(0, true, delta)
-		if visible:
-			var facing: Vector3 = hero.position - target.position
-			visual.rotation.y = atan2(facing.x, facing.z)
-		var label: Label3D = target.get_node("StateLabel")
-		if visible:
-			target.set_meta("last_seen", destination)
-			target.set_meta("search_time", 3.0)
-			label.text = "CONTACT  /  %d" % int(target.get_meta("health"))
-			label.modulate = Color("ff8e9c")
-		else:
-			target.set_meta("search_time", maxf(0, target.get_meta("search_time") - delta))
-			label.text = "SEARCHING" if target.get_meta("search_time") > 0 else "SCANNING"
-			label.modulate = Color("97aabe")
-		var timer: float = target.get_meta("shot_timer") - delta
-		if timer <= 0 and (visible or target.get_meta("search_time") > 0):
-			timer = 3.0
-			visual.attack()
-			_launch_orb(origin, target.get_meta("last_seen"), Color("ff778f"), true, target)
-		target.set_meta("shot_timer", timer)
+		target.update_brain(hero, _sentinel_can_see(target), delta)
+
+func _sentinel_can_see(target: CharacterBody3D) -> bool:
+	if cloak_time > 0 or target.position.distance_to(hero.position) > 18.0:
+		return false
+	var origin := target.position + Vector3.UP * 1.45
+	var destination := hero.position + Vector3.UP
+	var ray := PhysicsRayQueryParameters3D.create(origin, destination, 7)
+	ray.exclude = [target.get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(ray)
+	return not hit.is_empty() and hit.collider == hero
+
+func _sentinel_projectile(origin: Vector3, destination: Vector3, source: CollisionObject3D) -> void:
+	_launch_orb(origin, destination, Color("ff778f"), true, source)
+
+func _sentinel_alerted(position: Vector3, radius: float, source: Node) -> void:
+	_broadcast_noise(position, radius, source)
+
+func _broadcast_noise(at: Vector3, radius: float, source: Node = null) -> void:
+	for target in get_tree().get_nodes_in_group("targets"):
+		if target == source or target.is_queued_for_deletion():
+			continue
+		target.hear_noise(at, radius)
 
 func _panel_style(color: Color, border: Color = Color("294154")) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -820,7 +808,7 @@ func show_menu() -> void:
 	hero.visual.set_frozen(true)
 	effects.process_mode = Node.PROCESS_MODE_DISABLED
 	for target in get_tree().get_nodes_in_group("targets"):
-		target.get_node("Avatar").set_frozen(true)
+		target.set_frozen(true)
 	_drop_prop()
 	for prop in get_tree().get_nodes_in_group("props"):
 		prop.freeze = true
@@ -842,7 +830,7 @@ func start_play() -> void:
 	effects.process_mode = Node.PROCESS_MODE_INHERIT
 	hero.visual.set_frozen(false)
 	for target in get_tree().get_nodes_in_group("targets"):
-		target.get_node("Avatar").set_frozen(false)
+		target.set_frozen(false)
 	hero.enabled = true
 	menu.hide()
 	hud.show()

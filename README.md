@@ -36,13 +36,13 @@ All twenty distinct three-power combinations are available. For example, Shield 
 | F | Melee punch (short windup and cooldown) |
 | Esc | Open hero creation and pause |
 
-Energy regenerates. Telekinesis grabs amber crates; pressing its key again throws the held crate. Two energy orbs, two melee punches, or one thrown crate disable a sentinel. Cloak lasts five seconds and breaks when attacking. Sentinels lose tracking and fire toward the last visible position. Their projectiles travel through space and can be dodged; already-fired attacks can still hit a cloaked hero. Reset restores health, resources, crates, and sentinels.
+Energy regenerates. Telekinesis grabs amber crates; pressing its key again throws the held crate. Two energy orbs, two melee punches, or one thrown crate disable a sentinel. Cloak lasts five seconds and breaks when attacking. Sentinels patrol while unaware, investigate sounds from powers and thrown crates, alert nearby allies when hit, then pursue and strafe at combat range when they see the hero. A hit causes a visible stagger; a lethal hit leaves a short shutdown pose before the sentinel clears. Their projectiles travel through space and can be dodged; already-fired attacks can still hit a cloaked hero. Reset restores health, resources, crates, and sentinels.
 
 ## Current limits
 
 The hero and sentinels use a free, rigged Quaternius robot with imported idle, walk, run, jump, and punch animation clips. The arena uses ambientCG concrete and metal color, normal, roughness, and metalness maps. Energy effects use traveling sphere meshes, animated shells, rotating torus meshes, 3D mesh particles, and local lights.
 
-This remains a mechanics POC with a stylized robot and a simple training arena. Appearance customization is color selection. There is no detailed character sculpting, audio, campaign, progression, controller support, or saved loadout yet. Selections persist only during the current session. Sentinels are stationary training enemies, not finished patrol AI. Walking and running blend imported animation clips; advanced foot placement and terrain IK are not implemented.
+This remains a mechanics POC with a stylized robot and a simple training arena. Appearance customization is color selection. There is no detailed character sculpting, audio, campaign, progression, controller support, or saved loadout yet. Selections persist only during the current session. Sentinel navigation is direct local steering with patrol, investigate, search, stagger, and engage states; it does not yet use pathfinding, tactical cover selection, coordinated formations, or melee attacks. Walking and running blend imported animation clips; advanced foot placement and terrain IK are not implemented.
 
 The intended starting window is 1280 × 800. Godot `4.7.2.stable.official.ed1daf0bf` was used for verification on this Mac.
 
@@ -56,7 +56,7 @@ godot --path client --script res://tests/capture.gd
 godot --path client --fixed-fps 60 --script res://tests/capture_actions.gd
 ```
 
-The automated suite checks loadouts, energy and cooldowns, cloak behavior, traveling projectile damage, physical thrown-crate impact, Blink collision and ground travel, reset, defeat, movement and animation selection, jumping, melee timing, and pause including in-flight attacks. The dedicated power suite also checks all twenty builds, empty/incomplete selection rejection, Shockwave range and cover, Shield expiry and damage blocking, and cleanup when changing powers. The capture command opens a temporary rendered window, saves images to `docs/qa/`, and exits.
+The automated suite checks loadouts, energy and cooldowns, cloak behavior, traveling projectile damage, physical thrown-crate impact, Blink collision and ground travel, reset, defeat, movement and animation selection, jumping, melee timing, pause including in-flight attacks, and sentinel patrol, investigation, hit staggering, ally alerts, and enemy fire. The dedicated power suite also checks all twenty builds, empty/incomplete selection rejection, Shockwave range and cover, Shield expiry and damage blocking, and cleanup when changing powers. The capture command opens a temporary rendered window, saves images to `docs/qa/`, and exits.
 
 Read [the concept and prototype scope](docs/CONCEPT.md) for the proposed direction, milestones, and research references. Decisions in that document are proposals unless explicitly marked as confirmed.
 
@@ -69,6 +69,7 @@ Development history: [work log](docs/WORK_LOG.md).
 - `hero_controller.gd`: movement, camera, and input.
 - `avatar_visual.gd`: imported model, animation transitions, attack pose, and appearance.
 - `energy_projectile.gd`: projectile travel and continuous collision queries.
+- `sentinel_controller.gd`: patrol, investigate, search, combat, hit response, and shutdown behavior for training opponents.
 - `power_vfx.gd`: 3D shells, mesh particles, rings, auras, and lights.
 - `surface_library.gd`: reusable PBR material setup.
 - `hero_lab.gd`: arena assembly, encounters, loadouts, and UI.
