@@ -8,9 +8,9 @@ The owner subsequently selected **creating a hero and combining powers** as the 
 
 ## Implemented starting point
 
-The `client/` Godot project now contains an early Hero Lab prototype: signature color selection, three freely selected power slots from four abilities, third-person movement, a small arena, physics crates, and five stationary sentinels. It includes resource limits, cloak detection changes, obstacle-aware Blink, damage, defeat, reset, and a pause/build menu. See the README for controls and limitations.
+The `client/` Godot project now contains an early Hero Lab prototype: signature color selection, three freely selected power slots from seven abilities, third-person movement, a small arena, physics crates, reactive sentinels, pickups, and a relay objective. It includes resource limits, cloak detection changes, obstacle-aware Blink, damage, defeat, reset, and a pause/build menu. See the README for controls and limitations.
 
-Prototype 03 adds Shockwave and Energy Shield. The opening screen starts with three empty slots and requires the player to choose exactly three of six freely combinable powers before entering.
+Prototype 04 adds Seeker Missiles. The opening screen starts with three empty slots and requires the player to choose exactly three of seven freely combinable powers before entering.
 
 The mission and expansion sections below remain future proposals. Prototype 02 replaces the capsule with a rigged Quaternius robot, adds imported movement and punch clips, physical energy projectiles, melee combat, ambientCG PBR surfaces, and layered 3D effects. The arena still has a target-disabling objective rather than core retrieval and extraction.
 
@@ -40,6 +40,7 @@ Equip three abilities freely from a small pool; presets are convenient starting 
 | Telekinesis | Grab and throw designated physics props | Move cover, distract guards, and attack |
 | Energy bolt | Aimed projectile with visible impact | Direct ranged combat |
 | Cloak | Temporary concealment that breaks on attack | Bypass patrols and reposition |
+| Seeker Missiles | Staggered three-projectile homing volley | Pursue exposed targets from a safe angle |
 
 Each power needs readable targeting, a clear limit, and immediate feedback. Test combinations such as blinking onto a roof and throwing a crate into the courtyard. Keep the initial appearance editor to a few color choices; detailed body and clothing customization follows the gameplay prototype.
 

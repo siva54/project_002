@@ -83,11 +83,21 @@ func _capture() -> void:
 	await frames(14)
 	await save_frame("shockwave")
 	lab.reset_arena()
+	await frames(4)
+	lab.loadout = ["missiles", "blink", "shield"]
+	target = get_nodes_in_group("targets")[0]
+	lab.hero.camera.look_at(target.position + Vector3.UP * 1.2)
+	observer.position = Vector3(6, 3.5, 13)
+	observer.look_at(Vector3(0, 1.0, -3))
+	lab.activate_slot(0)
+	await frames(12)
+	await save_frame("seeker-volley")
+	lab.reset_arena()
 	observer.position = Vector3(7, 4.5, -2)
 	observer.look_at(Vector3(0, 1.5, -10.5))
 	lab._energize_relay(70.0, "ENERGY BOLT")
 	await frames(8)
 	await save_frame("power-relay")
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	print("Captured movement, attacks, six power effects, and the relay objective.")
+	print("Captured movement, attacks, seven power effects, and the relay objective.")
 	quit()

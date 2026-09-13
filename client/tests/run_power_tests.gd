@@ -19,12 +19,12 @@ func frames(count: int) -> void:
 
 func _run() -> void:
 	var combinations := 0
-	for a in range(6):
-		for b in range(a + 1, 6):
-			for c in range(b + 1, 6):
+	for a in range(Catalog.POWER_IDS.size()):
+		for b in range(a + 1, Catalog.POWER_IDS.size()):
+			for c in range(b + 1, Catalog.POWER_IDS.size()):
 				check(Catalog.validate_loadout([Catalog.POWER_IDS[a], Catalog.POWER_IDS[b], Catalog.POWER_IDS[c]]), "Every three-power combination must be selectable")
 				combinations += 1
-	check(combinations == 20, "Six powers must offer twenty distinct three-power builds")
+	check(combinations == 35, "Seven powers must offer thirty-five distinct three-power builds")
 	var lab = load("res://scenes/hero_lab.tscn").instantiate()
 	root.add_child(lab)
 	lab.set_physics_process(false)
@@ -99,6 +99,17 @@ func _run() -> void:
 	lab.reset_arena()
 	check(lab.shield_time == 0 and not is_instance_valid(lab.shield_aura), "Reset must clear Shield protection and its effect")
 	check(lab.loadout == ["shockwave", "blink", "shield"], "Arena reset must preserve the chosen three-power build")
+	await frames(3)
+	lab.loadout = ["missiles", "blink", "shield"]
+	lab.energy = 100
+	target = get_nodes_in_group("targets")[0]
+	lab.hero.camera.look_at(target.position + Vector3.UP * 1.2)
+	check(lab.activate_slot(0), "Equipped Seeker Missiles must launch when an exposed sentinel is available")
+	check(lab.energy == 60 and lab.cooldowns["missiles"] == 4, "Seeker Missiles must charge energy and enter cooldown")
+	var missiles := get_nodes_in_group("projectiles").filter(func(projectile): return projectile.is_missile)
+	check(missiles.size() == 3 and missiles[0].homing_target == target, "Seeker Missiles must launch a three-projectile volley aimed at an exposed target")
+	await frames(50)
+	check(target.get_meta("health") < 60, "A seeker volley must curve into and damage its acquired sentinel")
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	print("Power selection and abilities: %d checks, %d failures" % [checks, failures])
 	lab.queue_free()

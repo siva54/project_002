@@ -74,3 +74,10 @@
 - Limited the encounter to three concurrent hostile projectiles and sampled sentinel line-of-sight at 120 ms intervals, preserving reactive behavior while avoiding repeated physics queries each frame.
 - Added a brief cast flash to Energy Bolt, slowed the shared punch clip, and gave sentinel fire a 220 ms animation wind-up. The visual action now precedes the damaging projectile instead of occurring simultaneously.
 - Verification: clean Godot editor import; **70 integration checks and 43 dedicated power/selection checks passed** headlessly. Fixed-FPS Metal captures were regenerated and the Energy Bolt and melee frames were visually reviewed.
+
+## 2026-09-13 11:00 CDT — Seeker Missiles
+
+- Added Seeker Missiles as the seventh selectable power. It spends 40 energy to launch three lightweight gold missiles in a staggered volley toward visible sentinels.
+- Each missile uses bounded steering, verifies line of sight every 120 ms, and drops to a harmless ballistic path if cover appears or its acquired target is removed. The implementation reuses the bounded projectile/effect system from the performance pass.
+- Updated the build UI, catalog, concept, README, automated combination coverage, and rendered capture plan for seven powers and 35 possible three-power builds.
+- Verification: clean Godot editor import; **70 integration checks and 62 dedicated power/selection checks passed** headlessly. Both renderer capture scripts completed on Metal, including the seven-power builder and Seeker Volley action frame.

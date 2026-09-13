@@ -476,6 +476,8 @@ func activate_slot(slot: int) -> bool:
 	match id:
 		"bolt":
 			success = _fire_bolt()
+		"missiles":
+			success = _fire_missiles()
 		"blink":
 			success = _blink()
 		"kinetic":
@@ -560,7 +562,39 @@ func _fire_bolt() -> bool:
 	_broadcast_noise(origin, 13.0)
 	return true
 
-func _launch_orb(origin: Vector3, endpoint: Vector3, color: Color, hostile: bool, owner_body: CollisionObject3D) -> Node3D:
+func _fire_missiles() -> bool:
+	_reveal()
+	var origin: Vector3 = hero.muzzle_position()
+	var targets := _visible_homing_targets(origin)
+	if targets.is_empty():
+		_message("SEEKER MISSILES  /  No exposed sentinel in range")
+		return false
+	hero.play_attack()
+	VFX.cast(effects, origin, Color("f6b85d"))
+	for index in range(3):
+		var target: Node3D = targets[index % targets.size()]
+		var spread: Vector3 = Basis(Vector3.UP, (float(index) - 1.0) * 0.16) * hero.aim_direction()
+		var missile: Node3D = _launch_orb(origin + Vector3.UP * 0.08 + Vector3(float(index - 1) * 0.18, 0, 0), target.position + Vector3.UP, Color("f6b85d"), false, hero, true, target, index * 0.13)
+		missile.direction = spread.normalized()
+		missile.speed = 20.0
+	_broadcast_noise(origin, 16.0)
+	_message("SEEKER VOLLEY  /  %d exposed target%s acquired" % [targets.size(), "s" if targets.size() > 1 else ""])
+	return true
+
+func _visible_homing_targets(origin: Vector3) -> Array:
+	var candidates: Array = []
+	for target in get_tree().get_nodes_in_group("targets"):
+		if target.is_queued_for_deletion() or target.position.distance_to(origin) > 26.0:
+			continue
+		var ray := PhysicsRayQueryParameters3D.create(origin, target.position + Vector3.UP, 5)
+		ray.exclude = [hero.get_rid()]
+		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
+		if not hit.is_empty() and hit.collider == target:
+			candidates.append(target)
+	candidates.sort_custom(func(a: Node3D, b: Node3D): return a.position.distance_squared_to(origin) < b.position.distance_squared_to(origin))
+	return candidates
+
+func _launch_orb(origin: Vector3, endpoint: Vector3, color: Color, hostile: bool, owner_body: CollisionObject3D, is_missile: bool = false, homing_target: Node3D = null, launch_delay: float = 0.0) -> Node3D:
 	if hostile:
 		var hostile_count := 0
 		for projectile in get_tree().get_nodes_in_group("projectiles"):
@@ -570,6 +604,9 @@ func _launch_orb(origin: Vector3, endpoint: Vector3, color: Color, hostile: bool
 			return null
 	var orb := Projectile.new()
 	orb.set_meta("hostile", hostile)
+	orb.is_missile = is_missile
+	orb.homing_target = homing_target
+	orb.launch_delay = launch_delay
 	orb.tint = color
 	orb.direction = (endpoint - origin).normalized()
 	orb.speed = 11.0 if hostile else 24.0
@@ -831,9 +868,9 @@ func _build_ui() -> void:
 	left.custom_minimum_size.x = 700
 	left.add_theme_constant_override("separation", 8)
 	columns.add_child(left)
-	left.add_child(_label("P R O J E C T   0 0 2     /     P R O T O T Y P E   0 3", 13, COLORS[0]))
+	left.add_child(_label("P R O J E C T   0 0 2     /     P R O T O T Y P E   0 4", 13, COLORS[0]))
 	left.add_child(_label("Choose your three powers.", 34))
-	left.add_child(_label("Six powers. Three slots. Build your own combination.", 16, Color("a2b7c9")))
+	left.add_child(_label("Seven powers. Three slots. Build your own combination.", 16, Color("a2b7c9")))
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 10)
@@ -843,7 +880,7 @@ func _build_ui() -> void:
 		var data: Dictionary = Catalog.POWERS[id]
 		var button := _button("")
 		button.name = "Choose_" + id
-		button.custom_minimum_size.y = 112
+		button.custom_minimum_size.y = 96 if POWER_IDS.size() > 6 else 112
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.pressed.connect(_toggle_power.bind(id))
 		button.tooltip_text = data.name + ": " + data.description

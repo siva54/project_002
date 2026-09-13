@@ -3,12 +3,13 @@ extends RefCounted
 const SLOT_COUNT := 3
 const MAX_ENERGY := 100.0
 const REGEN_PER_SECOND := 16.0
-const POWER_IDS := ["bolt", "blink", "kinetic", "cloak", "shockwave", "shield"]
+const POWER_IDS := ["bolt", "missiles", "blink", "kinetic", "cloak", "shockwave", "shield"]
 const SHOCKWAVE_RADIUS := 6.0
 const SHOCKWAVE_DAMAGE := 30.0
 const SHIELD_DURATION := 5.0
 const POWERS := {
 	"bolt": {"name": "Energy Bolt", "cost": 12.0, "cooldown": 0.55, "description": "Cast a traveling energy orb. Strike a target or launch a crate."},
+	"missiles": {"name": "Seeker Missiles", "cost": 40.0, "cooldown": 4.0, "description": "Launch a three-missile volley that tracks exposed sentinels; cover breaks the lock."},
 	"blink": {"name": "Blink", "cost": 25.0, "cooldown": 1.2, "description": "Teleport up to 8 metres toward your aim. Solid obstacles stop the jump."},
 	"kinetic": {"name": "Telekinesis", "cost": 18.0, "cooldown": 0.5, "description": "Aim at a crate to lift it. Use again to throw it at a target."},
 	"cloak": {"name": "Cloak", "cost": 30.0, "cooldown": 6.0, "description": "Conceal yourself for 5 seconds. Attacking reveals you."},

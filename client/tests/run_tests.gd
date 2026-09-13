@@ -31,7 +31,7 @@ func _run() -> void:
 	check(get_nodes_in_group("props").size() == 4, "Arena starts with four props")
 	check(not lab.running and lab.menu.visible, "The prototype starts in hero creation")
 	check(lab.loadout.is_empty() and lab.start_button.disabled, "Opening must require the player to choose their three powers")
-	check(lab.power_buttons.size() == 6, "All six powers must be available in hero creation")
+	check(lab.power_buttons.size() == 7, "All seven powers must be available in hero creation")
 	lab.start_play()
 	check(not lab.running, "An empty build must not enter gameplay")
 	lab._toggle_power("blink")

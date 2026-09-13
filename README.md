@@ -14,18 +14,19 @@ godot --path client
 
 You can also open `client/project.godot` in Godot 4 and press F6 with the hero lab scene open, or F5 to run the project.
 
-The game opens with three empty slots. Choose exactly three of the six powers below; Enter becomes available only when all three slots are filled. Cards and the loadout preview show the assigned keys (1, 2, 3) in selection order. Click a selected card to remove it, then choose a replacement. You can also choose a signature color. Enter the playground to disable five sentinels, collect power cells, and charge the central relay; Esc pauses and reopens your build.
+The game opens with three empty slots. Choose exactly three of the seven powers below; Enter becomes available only when all three slots are filled. Cards and the loadout preview show the assigned keys (1, 2, 3) in selection order. Click a selected card to remove it, then choose a replacement. You can also choose a signature color. Enter the playground to disable five sentinels, collect power cells, and charge the central relay; Esc pauses and reopens your build.
 
 | Power | What it does |
 | --- | --- |
 | Energy Bolt | Cast a traveling orb that damages targets and pushes crates. |
+| Seeker Missiles | Fire a staggered three-missile volley that curves toward exposed sentinels. |
 | Blink | Teleport up to eight metres through clear space. |
 | Telekinesis | Lift a crate, then use the power again to throw it. |
 | Cloak | Conceal yourself for five seconds; attacks reveal you. |
 | Shockwave | Damage exposed enemies within six metres and fling crates outward. Solid cover blocks it. |
 | Energy Shield | Block incoming enemy energy for five seconds while continuing to move and attack. |
 
-All twenty distinct three-power combinations are available. For example, Shield + Shockwave + Blink creates a protected close-range build. Removing Shield or Cloak from the build ends its active effect. Arena reset preserves your selected three powers.
+All thirty-five distinct three-power combinations are available. For example, Shield + Shockwave + Blink creates a protected close-range build, while Seeker Missiles + Cloak + Blink supports hit-and-reposition play. Removing Shield or Cloak from the build ends its active effect. Arena reset preserves your selected three powers.
 
 | Control | Action |
 | --- | --- |
@@ -37,6 +38,8 @@ All twenty distinct three-power combinations are available. For example, Shield 
 | Esc | Open hero creation and pause |
 
 Energy regenerates. Telekinesis grabs amber crates; pressing its key again throws the held crate. Two energy orbs, two melee punches, or one thrown crate disable a sentinel. Cloak lasts five seconds and breaks when attacking. Sentinels patrol while unaware, investigate sounds from powers and thrown crates, alert nearby allies when hit, then pursue and strafe at combat range when they see the hero. A hit causes a visible stagger; a lethal hit leaves a short shutdown pose before the sentinel clears. Their projectiles travel through space and can be dodged; already-fired attacks can still hit a cloaked hero.
+
+Seeker Missiles cost 40 energy and launch three small homing projectiles 130 ms apart. Each tracks its initially acquired, exposed sentinel with a bounded turn rate; cover or a destroyed target breaks its lock, then it continues forward and can be avoided.
 
 Four cells are placed in the arena: jade cells restore 30 energy and coral cells restore 25 vitality. The central Power Relay takes charge from Energy Bolts (25%), Shockwaves (30%), melee strikes (12%), and thrown crates (45%). Bringing it to 100% restores all energy and adds 30 vitality. The HUD and the 3D relay label show objective progress. Reset restores enemies, pickups, relay charge, health, and resources.
 
@@ -60,7 +63,7 @@ godot --path client --script res://tests/capture.gd
 godot --path client --fixed-fps 60 --script res://tests/capture_actions.gd
 ```
 
-The automated suite checks loadouts, energy and cooldowns, cloak behavior, traveling projectile damage, physical thrown-crate impact, Blink collision and ground travel, reset, defeat, movement and animation selection, jumping, melee timing, pause including in-flight attacks, reactive sentinel behavior, shot telegraphing, pickups, and relay charging/rewards. The dedicated power suite also checks all twenty builds, empty/incomplete selection rejection, Shockwave range and cover, Shield expiry and damage blocking, and cleanup when changing powers. The capture command opens a temporary rendered window, saves images to `docs/qa/`, and exits.
+The automated suite checks loadouts, energy and cooldowns, cloak behavior, traveling projectile damage, physical thrown-crate impact, Blink collision and ground travel, reset, defeat, movement and animation selection, jumping, melee timing, pause including in-flight attacks, reactive sentinel behavior, shot telegraphing, pickups, and relay charging/rewards. The dedicated power suite also checks all thirty-five builds, empty/incomplete selection rejection, Seeker Missile acquisition and homing impact, Shockwave range and cover, Shield expiry and damage blocking, and cleanup when changing powers. The capture command opens a temporary rendered window, saves images to `docs/qa/`, and exits.
 
 Read [the concept and prototype scope](docs/CONCEPT.md) for the proposed direction, milestones, and research references. Decisions in that document are proposals unless explicitly marked as confirmed.
 
