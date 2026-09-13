@@ -1,0 +1,17 @@
+[
+  {
+    "asset": "Concrete030",
+    "source": "https://ambientcg.com/view?id=Concrete030",
+    "archive_sha256": "9101871625bde3ccf3c57ca7af4372196d9ca9f678c786b8de698a576784d403"
+  },
+  {
+    "asset": "Metal032",
+    "source": "https://ambientcg.com/view?id=Metal032",
+    "archive_sha256": "9e4f363905a647958c273154fa125d2a6440892d0e583f9b3af24bb08b5afc3c"
+  },
+  {
+    "asset": "RobotExpressive",
+    "source": "https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/RobotExpressive",
+    "sha256": "047f5e5fb3bb6d378bd1df16ca6137f2a596c99b3a1b5690b4020c05aaf6f319"
+  }
+]
