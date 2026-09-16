@@ -81,3 +81,17 @@
 - Each missile uses bounded steering, verifies line of sight every 120 ms, and drops to a harmless ballistic path if cover appears or its acquired target is removed. The implementation reuses the bounded projectile/effect system from the performance pass.
 - Updated the build UI, catalog, concept, README, automated combination coverage, and rendered capture plan for seven powers and 35 possible three-power builds.
 - Verification: clean Godot editor import; **70 integration checks and 62 dedicated power/selection checks passed** headlessly. Both renderer capture scripts completed on Metal, including the seven-power builder and Seeker Volley action frame.
+
+## 2026-09-15 10:00 CDT — grounded human combatant presentation
+
+- Replaced the runtime robot with authored, tactical human silhouettes: adult proportions, helmet, visor, vest, armor, limbs, boots, and restrained team accents. The previous RobotExpressive GLB remains bundled only as a documented legacy reference.
+- Rebuilt idle, locomotion, jump, and punch presentation as procedural poses so the existing movement, melee, sentinels, and powers continue to work without an unavailable external human-model download.
+- Darkened the environment, lowered ambient fill, increased fog, and shifted the sun to a neutral hard light for a more serious industrial-combat tone.
+- Verification: clean Godot editor import; 70 integration and 62 dedicated selection/power checks headlessly. Both capture scripts completed on Metal; human combatant walking, projectile, and melee screens were reviewed at 1280×800.
+
+## 2026-09-15 12:00 CDT — digital-human replacement
+
+- Replaced the temporary block-built tactical silhouette with the locally bundled CC0 Vitruvian digital-human body and face. Every hero and sentinel now has smooth adult anatomy, clothing, footwear, facial geometry, and the pack’s authored idle and walk animation clips.
+- Kept combat functional by repurposing the pack’s compact Wave clip as the melee motion and using a lightweight chest patch for team identity. The source package’s hair physics and custom look-development shaders are intentionally excluded from this POC to preserve its smooth frame time.
+- Updated source records, credits, README, concept, and renderer captures for the asset-backed presentation.
+- Verification: clean Godot editor import; 70 integration checks and 62 dedicated power/selection checks passed headlessly. Both capture scripts completed on Metal, including the walking and melee human-combat frames.

@@ -173,7 +173,7 @@ func _run() -> void:
 	Input.action_press("move_forward")
 	for i in range(15):
 		await physics_frame
-	check(lab.hero.visual.active_clip == "Walking", "Ground travel must use the imported walking animation")
+	check(lab.hero.visual.active_clip == "Walking", "Ground travel must animate the human walk cycle")
 	Input.action_release("move_forward")
 	check(lab.hero.position.z < before.z - 0.5, "Movement input must move the actual hero body")
 	Input.action_press("jump")
@@ -181,7 +181,7 @@ func _run() -> void:
 	await physics_frame
 	Input.action_release("jump")
 	check(lab.hero.velocity.y > 0, "Jump input must lift a grounded hero")
-	check(lab.hero.visual.active_clip in ["Jump", "WalkJump"], "Jump must play an imported airborne animation")
+	check(lab.hero.visual.active_clip in ["Jump", "WalkJump"], "Jump must switch the human combatant to an airborne pose")
 	lab.show_menu()
 	before = lab.hero.position
 	Input.action_press("move_forward")
@@ -200,7 +200,7 @@ func _run() -> void:
 	lab.hero.camera.global_position = lab.hero.position + Vector3.UP * 1.3
 	lab.hero.camera.look_at(melee_target.position + Vector3.UP * 1.3)
 	check(lab.melee_attack(), "Melee input must begin an attack")
-	check(lab.hero.visual.active_clip == "Punch", "Melee must use the imported Punch clip")
+	check(lab.hero.visual.active_clip == "Punch", "Melee must use the human combatant punch pose")
 	check(melee_target.get_meta("health") == 60, "Melee damage must wait for the strike windup")
 	check(not lab.melee_attack(), "Melee cooldown must prevent duplicate strikes")
 	lab._physics_process(0.19)

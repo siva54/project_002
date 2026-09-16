@@ -110,20 +110,20 @@ func _build_world() -> void:
 	var environment := WorldEnvironment.new()
 	var settings := Environment.new()
 	settings.background_mode = Environment.BG_COLOR
-	settings.background_color = Color("111c30")
+	settings.background_color = Color("070b11")
 	settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	settings.ambient_light_color = Color("d1dfeb")
-	settings.ambient_light_energy = 0.42
+	settings.ambient_light_color = Color("9cadb8")
+	settings.ambient_light_energy = 0.26
 	settings.fog_enabled = true
-	settings.fog_light_color = Color("192b40")
-	settings.fog_density = 0.003
+	settings.fog_light_color = Color("101820")
+	settings.fog_density = 0.006
 	settings.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	environment.environment = settings
 	add_child(environment)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-45, -25, 0)
-	sun.light_color = Color("fff0d9")
-	sun.light_energy = 0.9
+	sun.light_color = Color("dbe7f1")
+	sun.light_energy = 1.15
 	sun.shadow_enabled = true
 	add_child(sun)
 	arena = Node3D.new()
@@ -868,7 +868,7 @@ func _build_ui() -> void:
 	left.custom_minimum_size.x = 700
 	left.add_theme_constant_override("separation", 8)
 	columns.add_child(left)
-	left.add_child(_label("P R O J E C T   0 0 2     /     P R O T O T Y P E   0 4", 13, COLORS[0]))
+	left.add_child(_label("P R O J E C T   0 0 2     /     P R O T O T Y P E   0 5", 13, COLORS[0]))
 	left.add_child(_label("Choose your three powers.", 34))
 	left.add_child(_label("Seven powers. Three slots. Build your own combination.", 16, Color("a2b7c9")))
 	var grid := GridContainer.new()

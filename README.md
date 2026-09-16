@@ -2,7 +2,7 @@
 
 An original third-person superpower action game inspired by the character-building freedom of Project Awakened.
 
-Status: **Hero Lab — Prototype 04**, a playable Godot power playground with animated characters, reactive opponents, objectives, collectibles, and 3D energy effects.
+Status: **Hero Lab — Prototype 05**, a grounded human-combat power playground with reactive opponents, objectives, collectibles, and 3D energy effects.
 
 ## Play
 
@@ -45,9 +45,9 @@ Four cells are placed in the arena: jade cells restore 30 energy and coral cells
 
 ## Current limits
 
-The hero and sentinels use a free, rigged Quaternius robot with imported idle, walk, run, jump, and punch animation clips. The arena uses ambientCG concrete and metal color, normal, roughness, and metalness maps. Energy effects use traveling sphere meshes, animated shells, rotating torus meshes, 3D mesh particles, and local lights.
+The hero and sentinels use a CC0 digital-human body and face with adult proportions, clothed materials, an authored idle/walk animation set, and a hand-to-face close-combat strike. Small chest patches identify the two teams without turning the character into a colored mannequin. The arena uses ambientCG concrete and metal color, normal, roughness, and metalness maps. Energy effects use traveling sphere meshes, animated shells, rotating torus meshes, bounded mesh particles, and local lights.
 
-This remains a mechanics POC with a stylized robot and a simple training arena. Appearance customization is color selection. There is no detailed character sculpting, audio, campaign, progression, controller support, or saved loadout yet. Selections persist only during the current session. Sentinel navigation is direct local steering with patrol, investigate, search, stagger, and engage states; it does not yet use pathfinding, tactical cover selection, coordinated formations, or melee attacks. Walking and running blend imported animation clips; advanced foot placement and terrain IK are not implemented.
+This remains a mechanics POC with a simple training arena. Appearance customization is team-accent selection. There is no detailed character sculpting, audio, campaign, progression, controller support, or saved loadout yet. Selections persist only during the current session. Sentinel navigation is direct local steering with patrol, investigate, search, stagger, and engage states; it does not yet use pathfinding, tactical cover selection, coordinated formations, or melee attacks. The animation set does not include advanced foot placement, terrain IK, or a full combat-animation library.
 
 Effects are intentionally bounded for a smooth playground loop: transient impact volumes are capped, projectiles do not run CPU particle emitters, only three enemy shots may be in flight, and sight checks refresh at 120 ms. Enemy shots have a short visible wind-up before firing.
 
@@ -74,7 +74,7 @@ Development history: [work log](docs/WORK_LOG.md).
 ## Implementation and free assets
 
 - `hero_controller.gd`: movement, camera, and input.
-- `avatar_visual.gd`: imported model, animation transitions, attack pose, and appearance.
+- `avatar_visual.gd`: instanced CC0 digital human, real face/body materials, animation playback, and team appearance.
 - `energy_projectile.gd`: projectile travel and continuous collision queries.
 - `sentinel_controller.gd`: patrol, investigate, search, combat, hit response, and shutdown behavior for training opponents.
 - `power_vfx.gd`: 3D shells, mesh particles, rings, auras, and lights.
