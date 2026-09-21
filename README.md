@@ -6,7 +6,7 @@ Status: **Hero Lab — Prototype 05**, a grounded human-combat power playground 
 
 ## Play
 
-Double-click `play.command` on this Mac, or run this command from `project_002`:
+Double-click `play.command` on macOS or `play.bat` on Windows. You can also run this command from `project_002`:
 
 ```sh
 godot --path client
