@@ -95,3 +95,9 @@
 - Kept combat functional by repurposing the pack’s compact Wave clip as the melee motion and using a lightweight chest patch for team identity. The source package’s hair physics and custom look-development shaders are intentionally excluded from this POC to preserve its smooth frame time.
 - Updated source records, credits, README, concept, and renderer captures for the asset-backed presentation.
 - Verification: clean Godot editor import; 70 integration checks and 62 dedicated power/selection checks passed headlessly. Both capture scripts completed on Metal, including the walking and melee human-combat frames.
+
+## 2026-09-21 01:46 CDT — Portable Windows and macOS Make commands
+
+- Added `make play`, `editor`, `doctor`, `import`, `check`/`test`, and `smoke`, with OS-aware Python selection and Godot discovery on PATH, macOS app/Homebrew locations, and nested Windows WinGet packages. Explicit executable paths with spaces are supported.
+- Checks import assets then run both existing game suites sequentially, stop on failure, and reject Godot script errors even when the process exits zero. README documents GNU Make/Python/Godot prerequisites and overrides; no neighboring repository dependency.
+- Validation: native macOS doctor and `make check` passed (both game suites); eight Python launcher tests passed, including mocked Windows discovery and error handling. Native Windows execution remains unverified.
