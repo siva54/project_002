@@ -4,6 +4,32 @@ An original third-person superpower action game inspired by the character-buildi
 
 Status: **Hero Lab — Prototype 05**, a grounded human-combat power playground with reactive opponents, objectives, collectibles, and 3D energy effects.
 
+## Portable Make commands
+
+With GNU Make, Python 3, and Godot installed, use the same commands on Windows
+and macOS (Linux also works):
+
+```sh
+make doctor   # Show detected OS, Python, Godot path and version
+make play     # Run the game
+make editor   # Open the Godot editor
+make check    # Run all automated checks (make test is an alias)
+make smoke    # Run a smaller validation pass
+make import   # Refresh imported assets
+```
+
+The Makefile selects `py -3` on native Windows and `python3` on macOS/Linux.
+The launcher finds Godot on `PATH`, in macOS Applications/Homebrew locations,
+or in the Windows WinGet package directory. For a portable/custom installation,
+use `make play GODOT="C:/Games/Godot/Godot.exe"` (or a macOS executable path).
+Use `PYTHON=python` if Windows Python is installed without the `py` launcher.
+Paths containing spaces are supported. Windows requires **GNU Make** (`make` or
+`mingw32-make`), not Microsoft's `nmake`; PowerShell is not required.
+`make` alone displays help and does not start the game.
+
+Checks import assets and run both test suites sequentially; `smoke` imports
+assets and verifies startup. This prototype has no persistent player saves.
+
 ## Play
 
 Double-click `play.command` on macOS or `play.bat` on Windows. You can also run this command from `project_002`:
