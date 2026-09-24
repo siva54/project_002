@@ -29,7 +29,7 @@ func _run() -> void:
 	camera.current = true
 	var source: AnimationLibrary = load("res://../artifacts/qa/" + take + "-study.res")
 	var visual_class := preload("res://scripts/kung_fu_visual.gd")
-	visual_class.COMBAT_LIBRARY.add_animation("Study", source.get_animation("Study"))
+	visual_class.COMBAT_LIBRARY.add_animation("Study", source.get_animation(source.get_animation_list()[0]))
 	if args.size() > 2 and args[2] == "close":
 		camera.position = Vector3(0.9, 1.85, 4.0)
 		camera.look_at(Vector3(0, 0.9, 0))

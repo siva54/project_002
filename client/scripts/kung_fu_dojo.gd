@@ -491,7 +491,7 @@ func _build_courtyard() -> void:
 	env.background_color = Color("202b30")
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color("b9cbd0")
-	env.ambient_light_energy = 0.35
+	env.ambient_light_energy = 0.55
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	add_child(environment)
 	var sun := DirectionalLight3D.new()
@@ -500,6 +500,17 @@ func _build_courtyard() -> void:
 	sun.light_energy = 0.85
 	sun.shadow_enabled = true
 	add_child(sun)
+	for setup in [
+		{"position": Vector3(2.5, 3.2, 3.4), "color": Color("fff0dd"), "energy": 1.2},
+		{"position": Vector3(-2.7, 3.0, -3.2), "color": Color("dce9ed"), "energy": 1.5},
+	]:
+		var fill := OmniLight3D.new()
+		fill.position = setup.position
+		fill.light_color = setup.color
+		fill.light_energy = setup.energy
+		fill.omni_range = 7.0
+		fill.shadow_enabled = false
+		add_child(fill)
 	var floor := _box(Vector3(0, -0.22, 0), Vector3(20, 0.4, 20), Color("7a8176"))
 	floor.get_child(0).material_override = Surfaces.pbr("concrete", Color("a5a799"), 0.45)
 	# Inlaid training square and fine stone joints keep distance readable.

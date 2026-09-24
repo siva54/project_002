@@ -44,7 +44,7 @@ func _ready() -> void:
 
 func configure_fighter(player: bool) -> void:
 	for material in clothing_materials:
-		material.albedo_color = (Color("a9a08c") if player else Color("63332e")) if material.resource_name == "VitShirt" else Color("171f24")
+		material.albedo_color = (Color("a69a87") if player else Color("694437")) if material.resource_name == "VitShirt" else Color("171f24")
 
 func _body_material(material_name: String) -> StandardMaterial3D:
 	var material := super._body_material(material_name)
@@ -257,13 +257,19 @@ func _fighting_stance(weight: float) -> void:
 	var rear: Vector3 = to_local(bone_world("RightFoot"))
 	Pose.limb(self, "Left", false, Vector3(0.17, lead.y, 0.16), Vector3(0.26, 0.79, 0.54), weight)
 	Pose.limb(self, "Right", false, Vector3(-0.18, rear.y, -0.34), Vector3(-0.27, 0.77, 0.14), weight)
-	Pose.limb(self, "Left", true, Vector3(0.14, 1.39, 0.30), Vector3(0.38, 1.10, 0.03), weight)
-	Pose.limb(self, "Right", true, Vector3(-0.16, 1.41, 0.12), Vector3(-0.38, 1.12, -0.02), weight)
+	Pose.limb(self, "Left", true, Vector3(0.12, 1.38, 0.25), Vector3(0.30, 0.68, 0.02), weight)
+	Pose.limb(self, "Right", true, Vector3(-0.14, 1.39, 0.11), Vector3(-0.30, 0.69, -0.02), weight)
 
 func _close_hands() -> void:
 	var guard: Animation = COMBAT_LIBRARY.get_animation("Guard")
 	for bone in finger_bones:
-		body_skeleton.set_bone_pose_rotation(bone, guard.rotation_track_interpolate(bone, 0))
+		if pair_controlled:
+			body_skeleton.set_bone_pose_rotation(bone, guard.rotation_track_interpolate(bone, 0))
+			continue
+		var name := body_skeleton.get_bone_name(bone)
+		var curl := -35.0 if "Thumb" in name else (-72.0 if name.ends_with("1") else -85.0)
+		var rest := body_skeleton.get_bone_rest(bone).basis.get_rotation_quaternion()
+		body_skeleton.set_bone_pose_rotation(bone, rest * Quaternion(Vector3.RIGHT, deg_to_rad(curl)))
 
 func _blend_pose() -> void:
 	if blend_time <= 0 or blend_age >= blend_time or previous_rotations.is_empty():

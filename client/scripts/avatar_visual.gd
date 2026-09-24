@@ -6,6 +6,8 @@ const BODY_ALBEDO := preload("res://assets/characters/vitruvian/vit_body_bc.png"
 const BODY_NORMAL := preload("res://assets/characters/vitruvian/vit_body_n.png")
 const FACE_ALBEDO := preload("res://assets/characters/vitruvian/vit_face_bc.png")
 const FACE_NORMAL := preload("res://assets/characters/vitruvian/vit_face_n.png")
+const EYE_SCLERA := preload("res://assets/characters/vitruvian/vit_sclera.png")
+const EYE_IRIS := preload("res://assets/characters/vitruvian/vit_iris.png")
 const HEAD_BONE := "mixamorig_Head"
 const MartialArts = preload("res://scripts/martial_arts.gd")
 
@@ -60,9 +62,37 @@ func _attach_head() -> void:
 	head.name = "HumanHead"
 	head_rig.add_child(head)
 	for mesh in _collect_meshes(head):
-		if mesh.name == "cm_vitruvian":
-			for surface in mesh.mesh.get_surface_count():
-				mesh.set_surface_override_material(surface, _make_skin_material(FACE_ALBEDO, FACE_NORMAL))
+		if mesh.name.ends_with("_eyeball"):
+			# The sclera shell otherwise shadows the iris behind its clear window.
+			mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		for surface in mesh.mesh.get_surface_count():
+			var source := mesh.mesh.surface_get_material(surface)
+			var name := source.resource_name.trim_suffix(".001") if source else ""
+			var material: StandardMaterial3D
+			match name:
+				"VitSkin": material = _make_skin_material(FACE_ALBEDO, FACE_NORMAL)
+				"VitSclera":
+					material = _make_material(Color("f5f0ed"), 0.0, 0.18)
+					material.albedo_texture = EYE_SCLERA
+					material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				"VitIris":
+					material = _make_material(Color.WHITE, 0.0, 0.55)
+					material.albedo_texture = EYE_IRIS
+				"VitEyeBack":
+					material = _make_material(Color("020202"), 0.0, 1.0)
+					material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+				"VitCornea2", "VitEyeshadow":
+					material = _make_material(Color(1, 1, 1, 0), 0.0, 0.1)
+					material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				"VitTearline":
+					material = _make_material(Color(0.30, 0.36, 0.42, 0.12), 0.0, 0.04)
+					material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				"VitCaruncle": material = _make_material(Color(0.70, 0.34, 0.30), 0.0, 0.38)
+				"VitMouth": material = _make_material(Color("432b29"), 0.0, 0.8)
+				_: continue
+			material.set_meta("base_transparency", material.transparency)
+			material.set_meta("base_alpha", material.albedo_color.a)
+			mesh.set_surface_override_material(surface, material)
 
 func _body_material(material_name: String) -> StandardMaterial3D:
 	match material_name:
@@ -184,8 +214,8 @@ func set_appearance(color: Color, cloaked: bool) -> void:
 	for material in clothing_materials:
 		material.albedo_color = material.albedo_color.lerp(color.darkened(0.70), 0.04)
 	for material in all_materials:
-		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA if cloaked else BaseMaterial3D.TRANSPARENCY_DISABLED
-		material.albedo_color.a = 0.26 if cloaked else 1.0
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA if cloaked else material.get_meta("base_transparency", BaseMaterial3D.TRANSPARENCY_DISABLED)
+		material.albedo_color.a = material.get_meta("base_alpha", 1.0) * (0.26 if cloaked else 1.0)
 	if accent_material:
 		accent_material.albedo_color = color.darkened(0.18)
 
