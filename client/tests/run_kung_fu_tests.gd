@@ -46,6 +46,14 @@ func _run() -> void:
 	check(dojo.rivals.size() == 2, "First bout must support switching between multiple melee opponents")
 	check(dojo.find_children("*", "PhysicalBone3D", true, false).is_empty(), "The active game must have no physical ragdoll bodies")
 	var enemy := await fixture()
+	await steps(10)
+	var lead: Vector3 = dojo.hero.visual.to_local(dojo.hero.visual.bone_world("LeftFoot"))
+	var rear: Vector3 = dojo.hero.visual.to_local(dojo.hero.visual.bone_world("RightFoot"))
+	check(lead.z - rear.z > 0.30 and absf(lead.x - rear.x) < 0.45, "Ready stance must stagger the feet instead of spreading them sideways")
+	var stance_head: Vector3 = dojo.hero.visual.to_local(dojo.hero.visual.bone_world("Head"))
+	var stance_lead_hand: Vector3 = dojo.hero.visual.to_local(dojo.hero.visual.bone_world("LeftHand"))
+	var stance_rear_hand: Vector3 = dojo.hero.visual.to_local(dojo.hero.visual.bone_world("RightHand"))
+	check(stance_head.y - minf(stance_lead_hand.y, stance_rear_hand.y) < 0.15 and stance_lead_hand.z > stance_rear_hand.z + 0.10, "Idle guard must protect the jaw with a forward lead hand")
 	# Every move must be reachable through the actual input graph and connect once.
 	for name in Catalog.MOVES:
 		enemy = await fixture()

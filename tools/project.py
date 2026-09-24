@@ -12,6 +12,12 @@ ROOT = Path(__file__).resolve().parents[1]
 CLIENT = ROOT / "client"
 ISOLATED_CHECKS = CLIENT / "tools/run_isolated_checks.py"
 USE_ISOLATED_QA = False
+PROJECT_TWO_SUITES = {
+    "legacy": "run_tests.gd",
+    "powers": "run_power_tests.gd",
+    "martial": "run_martial_tests.gd",
+    "combat": "run_kung_fu_tests.gd",
+}
 
 
 def find_godot(override="", system=None):
@@ -82,16 +88,19 @@ def main():
             mode = {"check": ["--check"], "smoke": ["--group", "smoke"], "import": ["--import"]}
             return subprocess.call([sys.executable, str(ISOLATED_CHECKS), "--godot", godot]
                                    + mode[options.command] + options.args, cwd=ROOT)
-        if options.args:
-            parser.error("Extra check arguments are only supported by Project 1's isolated runner.")
+        if options.args and not (options.command == "check" and len(options.args) == 1 and options.args[0] in PROJECT_TWO_SUITES):
+            parser.error("Use 'check' or 'check legacy|powers|martial|combat'.")
         # Project 2 has no persistent player saves; import first, then test serially.
         result = checked_run(command + ["--headless", "--editor", "--quit"])
         if result or options.command == "import":
             return result
         if options.command == "smoke":
             return checked_run(command + ["--headless", "--quit-after", "60"])
-        for suite in ("run_tests.gd", "run_power_tests.gd", "run_martial_tests.gd", "run_kung_fu_tests.gd"):
-            result = checked_run(command + ["--headless", "--script", "res://tests/" + suite])
+        suites = [PROJECT_TWO_SUITES[options.args[0]]] if options.args else PROJECT_TWO_SUITES.values()
+        for suite in suites:
+            # These suites await physics frames. A fixed clock advances their
+            # authored 60 Hz timing without waiting for wall-clock pacing.
+            result = checked_run(command + ["--headless", "--fixed-fps", "60", "--script", "res://tests/" + suite])
             if result:
                 return result
         return 0

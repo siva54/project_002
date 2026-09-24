@@ -45,7 +45,7 @@ The latest recording isolates an angled jab-cross, a crane straight, a stepping 
 
 The main chain uses captured body motion with hip turns, shoulder rotation, leg motion and weight transfer. Captured attack entries include two distinct karate straight performances; some other moves still share a source performance at different timings. Jab and cross are consecutive parts of one take with a shared heading. Translation is reconstructed from the retargeted support foot so the performer's different proportions do not cause skating. Captured hand/foot contact positions set target approach distance. When the opponent is out of the captured reach, the fighter takes a guarded step before the strike begins; facing settles with that step, and movement input resumes through recovery. Contact correction is capped at 7.5 cm. The elbow, low kick and knee retain constructed adjustments.
 
-Transitions retain outgoing angular motion. The idle uses an active boxing guard. Hit recoil is applied to the pose that was struck, retaining the hands and lower-body stance before recovering to guard; it no longer replaces the body with an unrelated standing pose. Normal strikes do not pause the animation clock. Counter framing eases toward a side view, with directional camera response and separate finishing/landing audio. Landing feedback occurs when the body reaches the floor.
+Transitions retain outgoing angular motion. The idle now places the lead foot ahead of a narrower rear foot, turns the torso slightly into range, and keeps one hand forward while the other protects the jaw. It eases back to captured movement and strikes. Hit recoil is applied to the pose that was struck, retaining the hands and lower-body stance before recovering to guard; it no longer replaces the body with an unrelated standing pose. Normal strikes do not pause the animation clock. Counter framing eases toward a side view, with directional camera response and separate finishing/landing audio. Landing feedback occurs when the body reaches the floor.
 
 ## Animation and scope
 
@@ -59,17 +59,20 @@ Requires Godot 4 and Python 3. `make play`, `make check`, `make smoke`, and `mak
 
 ```sh
 python tools/project.py check
+python tools/project.py check combat  # fast active-combat iteration
 python tools/project.py smoke
 python -m unittest discover -s tools/tests
 # Rebuild the bundled source animation bank:
 python tools/project.py play --headless --script res://tools/bake_combat_library.gd
 # Active integration tests and rendered review:
-python tools/project.py play --headless --script res://tests/run_kung_fu_tests.gd
+python tools/project.py play --headless --fixed-fps 60 --script res://tests/run_kung_fu_tests.gd
 python tools/project.py play --fixed-fps 60 --script res://tests/capture_karate_positioning.gd
 python tools/project.py play --fixed-fps 60 --script res://tests/capture_controlled_recovery.gd
 ```
 
 The active suite verifies every move through the input graph, actual limb contact and single-hit damage, early combo buffering, movement and target switching, stamina, both three-hit counter finishers, limb contact, floor-timed landing feedback, early recoil, transition continuity, fixed follow-through targets, preserved captured hips/legs, captured movement, staged damage, counter interruption and buffered target handoff, directional guard, grounded evasion, cover, both paired takedowns, pause, interruption, recovery, defeat, melee AI, bout progression, restart, and absence of ragdolls. The standard check command also runs the retained legacy suites.
+
+Checks run the simulation with a fixed 60 FPS clock, so authored frame timing advances without waiting for wall-clock pacing. `check combat` runs the active combat suite after a Godot import; `check` runs all four suites.
 
 - `combat_moves.gd`: move definitions and punch/kick graph.
 - `counter_sequences.gd`: shared counter choreography and contact/landing times.

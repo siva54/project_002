@@ -30,6 +30,13 @@ class LauncherTests(unittest.TestCase):
             self.assertEqual(project.main(), 0)
             self.assertEqual(run.call_count, 5)
             self.assertEqual(run.call_args.args[0][-1], "res://tests/run_kung_fu_tests.gd")
+            self.assertIn(["--headless", "--fixed-fps", "60", "--script"], [run.call_args.args[0][i:i + 4] for i in range(len(run.call_args.args[0]) - 3)])
+
+    def test_combat_check_runs_only_active_suite_after_import(self):
+        with patch.object(project.sys, "argv", ["project.py", "check", "combat"]), patch.object(project, "find_godot", return_value="godot"), patch.object(project, "checked_run", return_value=0) as run:
+            self.assertEqual(project.main(), 0)
+            self.assertEqual(run.call_count, 2)
+            self.assertEqual(run.call_args.args[0][-5:], ["--headless", "--fixed-fps", "60", "--script", "res://tests/run_kung_fu_tests.gd"])
 
     def test_windows_nested_winget_prefers_console(self):
         with tempfile.TemporaryDirectory() as directory, patch.dict(project.os.environ, {"LOCALAPPDATA": directory}), patch.object(project.shutil, "which", return_value=None):

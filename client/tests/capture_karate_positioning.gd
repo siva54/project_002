@@ -44,7 +44,7 @@ func _run() -> void:
 		if frame in [470, 620]:
 			dojo.hero.request_evade(Vector3.RIGHT if frame == 470 else Vector3.LEFT)
 		await process_frame
-		if frame in [20, 31, 42, 55, 180, 197, 207, 321, 339, 353, 470, 483, 496, 620, 633, 646]:
+		if frame in [10, 20, 31, 42, 55, 180, 197, 207, 321, 339, 353, 470, 483, 496, 620, 633, 646]:
 			await RenderingServer.frame_post_draw
 			root.get_texture().get_image().save_png(ProjectSettings.globalize_path("res://../artifacts/qa/karate-position-%03d.png" % frame))
 	dojo.stop_audio()

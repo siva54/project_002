@@ -178,3 +178,9 @@
 - Updated the Tab guide, move catalog labels, README and motion design notes. Recorded `docs/qa/karate-positioning.mp4`, a labeled 750-frame fixture review of the angled one-two, both karate straights and both slips. Reviewed rendered contact frames. It is a scripted pose review, not a live AI bout.
 - Verification: all five full-check stages passed, including the active suite with 146 checks; the same suite passed with the OpenGL renderer. Support-foot drift after the guarded approach is under 6 cm in the measured contact window, and the original planted impact checks remain under 2.5 cm. Startup smoke, nine Python launcher tests, source hash and whitespace checks passed.
 - Limitation: the character rig and especially assembled two-person counters, falls and reactions remain prototype quality. This pass does not establish equivalence to Sifu, Sleeping Dogs or Acts of Blood; visual feel needs owner playtest and dedicated paired animation direction.
+
+## 2026-09-24 - faster checks and ready stance
+
+- The Project 2 check runner now drives all Godot test suites with a fixed 60 FPS clock. This preserves their frame-based contact assertions while avoiding wall-clock pacing. Added `python tools/project.py check combat` for active-combat iteration; the full check remains available. Local full-check time fell from roughly 55 seconds to 8.5 seconds, with all suites passing.
+- Replaced the square, sideways-spread ready stance with a narrower lead/rear foot placement, slight forward torso angle and asymmetric jaw-level guard. The constraints fade under movement and blend into source attacks. Added stance geometry checks; the active suite now has 148 passing checks.
+- Captured and reviewed front and side views of the stance, then refreshed `docs/qa/karate-positioning.mp4`. The revised posture is an incremental prototype improvement; motion and character art remain below the owner's commercial-game reference.

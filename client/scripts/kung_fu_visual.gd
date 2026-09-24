@@ -139,6 +139,8 @@ func tick(delta: float, speed: float = 0.0, travel_angle: float = 0.0) -> void:
 			Pose.twist(self, side + "UpLeg", Vector3.UP, clampf(travel_angle, -1.0, 1.0) * locomotion_weight)
 	if loop and motion_data.is_empty():
 		Pose.twist(self, "Spine", Vector3.UP, sin(motion_time * 2.6) * 0.025)
+	if active_clip in ["FightIdle", "Guard"] and motion_data.is_empty():
+		_fighting_stance(1.0 - locomotion_weight)
 	var recoil := Pose.recoil(motion_time, reaction_duration)
 	if reaction in ["left", "right", "head", "body", "leg"]:
 		# The source reaction supplies the whole-body recoil; this only directs it.
@@ -242,6 +244,21 @@ func _track_motion(delta: float) -> void:
 	observed_rotations.clear()
 	for bone in body_skeleton.get_bone_count():
 		observed_rotations.append(body_skeleton.get_bone_pose_rotation(bone))
+
+func _fighting_stance(weight: float) -> void:
+	if weight < 0.01:
+		return
+	# The captured idle has both feet spread laterally at nearly the same depth.
+	# Place the lead foot forward and the rear foot beneath the hip, then keep
+	# one hand in range while the other protects the jaw.
+	Pose.twist(self, "Spine", Vector3.UP, 0.10 * weight)
+	Pose.twist(self, "Spine", Vector3.RIGHT, 0.06 * weight)
+	var lead: Vector3 = to_local(bone_world("LeftFoot"))
+	var rear: Vector3 = to_local(bone_world("RightFoot"))
+	Pose.limb(self, "Left", false, Vector3(0.17, lead.y, 0.16), Vector3(0.26, 0.79, 0.54), weight)
+	Pose.limb(self, "Right", false, Vector3(-0.18, rear.y, -0.34), Vector3(-0.27, 0.77, 0.14), weight)
+	Pose.limb(self, "Left", true, Vector3(0.14, 1.39, 0.30), Vector3(0.38, 1.10, 0.03), weight)
+	Pose.limb(self, "Right", true, Vector3(-0.16, 1.41, 0.12), Vector3(-0.38, 1.12, -0.02), weight)
 
 func _close_hands() -> void:
 	var guard: Animation = COMBAT_LIBRARY.get_animation("Guard")
