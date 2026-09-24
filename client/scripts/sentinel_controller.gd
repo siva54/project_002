@@ -2,10 +2,11 @@ extends CharacterBody3D
 
 signal projectile_requested(origin: Vector3, destination: Vector3, source: CollisionObject3D)
 signal alerted(position: Vector3, radius: float, source: Node)
+signal grapple_landed(target: CharacterBody3D)
 
 const Avatar = preload("res://scripts/avatar_visual.gd")
 
-enum State { PATROL, INVESTIGATE, ENGAGE, SEARCH, STAGGER, SHUTDOWN }
+enum State { PATROL, INVESTIGATE, ENGAGE, SEARCH, STAGGER, SHUTDOWN, GRAPPLED, THROWN, GETUP }
 
 const BASE_COLOR := Color("ca5366")
 const PATROL_SPEED := 2.0
@@ -29,6 +30,9 @@ var strafe_sign := 1.0
 var visual: Node3D
 var state_label: Label3D
 var frozen := false
+var thrown_time := 0.0
+var getup_time := 0.0
+var throw_style := 0
 
 func _ready() -> void:
 	collision_layer = 4
@@ -67,10 +71,9 @@ func setup(spawn: Vector3, points: Array, initial_shot_delay: float) -> void:
 func set_frozen(value: bool) -> void:
 	frozen = value
 	visual.set_frozen(value)
-	velocity = Vector3.ZERO
 
 func hear_noise(at: Vector3, radius: float) -> void:
-	if state == State.SHUTDOWN or position.distance_to(at) > radius:
+	if state in [State.SHUTDOWN, State.GRAPPLED, State.THROWN, State.GETUP] or position.distance_to(at) > radius:
 		return
 	last_known_position = at
 	investigate_time = maxf(investigate_time, 4.5)
@@ -88,14 +91,17 @@ func take_damage(amount: float, attacker_position: Vector3) -> bool:
 	if health <= 0:
 		state = State.SHUTDOWN
 		velocity = Vector3.ZERO
-		visual.attack()
+		visual.react_to_hit()
 		visual.set_appearance(Color("f6bb66"), false)
 		_refresh_label()
 		_sync_metadata()
 		return true
+	if state in [State.GRAPPLED, State.THROWN, State.GETUP]:
+		_sync_metadata()
+		return false
 	state = State.STAGGER
 	stagger_time = 0.38
-	visual.attack()
+	visual.react_to_hit()
 	visual.set_appearance(Color("ffb072"), false)
 	alerted.emit(attacker_position, 18.0, self)
 	_refresh_label()
@@ -104,6 +110,32 @@ func take_damage(amount: float, attacker_position: Vector3) -> bool:
 
 func update_brain(hero: CharacterBody3D, visible: bool, delta: float) -> void:
 	if frozen or state == State.SHUTDOWN:
+		return
+	if state == State.GRAPPLED:
+		return
+	if state == State.THROWN:
+		thrown_time += delta
+		velocity.y -= 18.0 * delta
+		move_and_slide()
+		visual.rotation.x = lerpf(visual.rotation.x, -1.25 if throw_style == 0 else 1.2, minf(1, delta * 8))
+		if is_on_floor() and thrown_time > 0.1:
+			state = State.GETUP
+			collision_mask = 3
+			getup_time = 0.75
+			velocity = Vector3.ZERO
+			grapple_landed.emit(self)
+		_refresh_label()
+		_sync_metadata()
+		return
+	if state == State.GETUP:
+		getup_time -= delta
+		visual.rotation.x = lerpf(visual.rotation.x, 0.0, minf(1, delta * 5))
+		if getup_time <= 0:
+			visual.reset_pose()
+			state = State.INVESTIGATE
+			investigate_time = 4.0
+		_refresh_label()
+		_sync_metadata()
 		return
 	if has_meta("shot_timer"):
 		shot_timer = minf(shot_timer, float(get_meta("shot_timer")))
@@ -139,6 +171,34 @@ func update_brain(hero: CharacterBody3D, visible: bool, delta: float) -> void:
 	elif state == State.ENGAGE:
 		_engage(hero, visible, delta)
 	visual.locomotion(Vector2(velocity.x, velocity.z).length(), is_on_floor(), delta)
+	_refresh_label()
+	_sync_metadata()
+
+func can_grapple() -> bool:
+	return state in [State.PATROL, State.INVESTIGATE, State.ENGAGE, State.SEARCH, State.STAGGER] and is_on_floor()
+
+func begin_grapple(attacker_position: Vector3) -> void:
+	state = State.GRAPPLED
+	last_known_position = attacker_position
+	velocity = Vector3.ZERO
+	shot_windup = 0
+	var direction := attacker_position - position
+	visual.rotation.y = atan2(direction.x, direction.z)
+	visual.react_to_hit()
+	_refresh_label()
+	_sync_metadata()
+
+func cancel_grapple() -> void:
+	state = State.INVESTIGATE
+	investigate_time = 4.0
+	visual.reset_pose()
+
+func throw_from_grapple(impulse: Vector3, style: int) -> void:
+	state = State.THROWN
+	collision_mask = 7
+	velocity = impulse
+	throw_style = style
+	thrown_time = 0
 	_refresh_label()
 	_sync_metadata()
 
@@ -195,7 +255,7 @@ func _move_direction(direction: Vector3, speed: float, delta: float) -> void:
 	move_and_slide()
 
 func _refresh_label() -> void:
-	var state_text: String = ["PATROL", "INVESTIGATE", "ENGAGE", "SEARCH", "STAGGERED", "SHUTDOWN"][state]
+	var state_text: String = ["PATROL", "INVESTIGATE", "ENGAGE", "SEARCH", "STAGGERED", "SHUTDOWN", "CLINCHED", "THROWN", "RECOVERING"][state]
 	state_label.text = "%s  /  %d" % [state_text, int(health)]
 	state_label.modulate = Color("ff8e9c") if state == State.ENGAGE else (Color("f6bb66") if state == State.STAGGER else Color("9bb3c4"))
 
@@ -205,4 +265,4 @@ func _sync_metadata() -> void:
 	set_meta("search_time", search_time if state == State.SEARCH else investigate_time)
 	set_meta("shot_timer", shot_timer)
 	set_meta("shot_windup", shot_windup)
-	set_meta("state", ["patrol", "investigate", "engage", "search", "stagger", "shutdown"][state])
+	set_meta("state", ["patrol", "investigate", "engage", "search", "stagger", "shutdown", "grappled", "thrown", "getup"][state])

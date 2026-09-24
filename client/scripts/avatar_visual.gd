@@ -7,10 +7,12 @@ const BODY_NORMAL := preload("res://assets/characters/vitruvian/vit_body_n.png")
 const FACE_ALBEDO := preload("res://assets/characters/vitruvian/vit_face_bc.png")
 const FACE_NORMAL := preload("res://assets/characters/vitruvian/vit_face_n.png")
 const HEAD_BONE := "mixamorig_Head"
+const MartialArts = preload("res://scripts/martial_arts.gd")
 
 var active_clip := ""
 var frozen := false
 var attack_remaining := 0.0
+var guard_remaining := 0.0
 var body_animation: AnimationPlayer
 var body_skeleton: Skeleton3D
 var clothing_materials: Array[StandardMaterial3D] = []
@@ -32,6 +34,7 @@ func _load_character() -> void:
 	if body_animation:
 		for clip_name in body_animation.get_animation_list():
 			body_animation.get_animation(clip_name).loop_mode = Animation.LOOP_LINEAR
+		MartialArts.install(body_animation, body_skeleton)
 	for mesh in _collect_meshes(body):
 		for surface in mesh.mesh.get_surface_count():
 			var source_material := mesh.get_active_material(surface)
@@ -121,8 +124,10 @@ func locomotion(speed: float, grounded: bool, delta: float) -> void:
 	if frozen:
 		return
 	attack_remaining = maxf(0.0, attack_remaining - delta)
+	guard_remaining = maxf(0.0, guard_remaining - delta)
 	if attack_remaining > 0.0:
 		return
+	rotation.x = lerpf(rotation.x, 0.0, minf(1, delta * 12))
 	if not grounded:
 		active_clip = "WalkJump" if speed > 1.0 else "Jump"
 		_play("Walk" if speed > 1.0 else "Idle", 1.0)
@@ -130,22 +135,41 @@ func locomotion(speed: float, grounded: bool, delta: float) -> void:
 		active_clip = "Running" if speed > 4.5 else "Walking"
 		_play("Walk", 1.5 if speed > 4.5 else 1.0)
 	else:
-		active_clip = "Idle"
-		_play("Idle")
+		active_clip = "Guard" if guard_remaining > 0 else "Idle"
+		_play("martial/Guard" if guard_remaining > 0 else "Idle")
 
 func attack() -> void:
-	attack_remaining = 0.5
-	active_clip = "Punch"
-	# The authored hand-to-face strike reads as a close-quarters attack and avoids a rigid pose.
-	_play("Wave", 1.25)
+	# Power casts use a short palm strike; melee selects its own combo stage.
+	strike(0)
+
+func strike(index: int) -> void:
+	var data: Dictionary = MartialArts.STRIKES[index]
+	_play_action(data)
+
+func grapple(index: int) -> void:
+	_play_action(MartialArts.GRAPPLES[index])
+
+func _play_action(data: Dictionary) -> void:
+	attack_remaining = data.duration
+	guard_remaining = data.duration + MartialArts.COMBO_GRACE
+	active_clip = data.clip
+	body_animation.stop()
+	body_animation.speed_scale = 1.0
+	body_animation.play("martial/" + data.clip, 0.07)
+	body_animation.advance(0)
+
+func react_to_hit() -> void:
+	attack_remaining = 0.38
+	active_clip = "Stagger"
+	_play("martial/Guard")
+	rotation.x = -0.16
 
 func _play(clip: String, speed: float = 1.0) -> void:
 	if body_animation == null or not body_animation.has_animation(clip):
 		return
+	body_animation.speed_scale = speed
 	if body_animation.current_animation != clip:
-		body_animation.play(clip, 0.16, speed)
-	else:
-		body_animation.speed_scale = speed
+		body_animation.play(clip, 0.16)
 
 func set_frozen(value: bool) -> void:
 	frozen = value
@@ -167,5 +191,8 @@ func set_appearance(color: Color, cloaked: bool) -> void:
 
 func reset_pose() -> void:
 	attack_remaining = 0.0
+	guard_remaining = 0.0
+	rotation.x = 0
+	rotation.z = 0
 	active_clip = "Idle"
 	_play("Idle")

@@ -1,0 +1,2 @@
+client/assets/animations/source/*.asf whitespace=-trailing-space,cr-at-eol
+client/assets/licenses/Quaternius-UAL*.txt whitespace=-trailing-space,-blank-at-eof,cr-at-eol

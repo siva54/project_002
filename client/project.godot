@@ -1,9 +1,9 @@
-; Project 002: first power playground.
+; Project 002: Flow State kung fu sparring.
 config_version=5
 
 [application]
-config/name="Project 002 — Hero Lab"
-run/main_scene="res://scenes/hero_lab.tscn"
+config/name="Project 002 - Flow State"
+run/main_scene="res://scenes/kung_fu_dojo.tscn"
 
 [display]
 window/size/viewport_width=1280

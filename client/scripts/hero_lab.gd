@@ -7,6 +7,7 @@ const Avatar = preload("res://scripts/avatar_visual.gd")
 const Surfaces = preload("res://scripts/surface_library.gd")
 const VFX = preload("res://scripts/power_vfx.gd")
 const Projectile = preload("res://scripts/energy_projectile.gd")
+const MartialArts = preload("res://scripts/martial_arts.gd")
 const COLORS := [Color("46dec6"), Color("eeaa55"), Color("ae9bff"), Color("f26b86")]
 const POWER_IDS := Catalog.POWER_IDS
 const MAX_HOSTILE_PROJECTILES := 3
@@ -28,6 +29,14 @@ var shield_aura: Node3D
 var shield_time := 0.0
 var melee_cooldown := 0.0
 var melee_windup := 0.0
+var melee_stage := -1
+var combo_remaining := 0.0
+var melee_buffered := false
+var melee_forward := Vector3.FORWARD
+var grapple_target: CharacterBody3D
+var grapple_windup := 0.0
+var grapple_cooldown := 0.0
+var grapple_style := 0
 var score := 0
 var relay: StaticBody3D
 var relay_core: Node3D
@@ -62,6 +71,7 @@ func _ready() -> void:
 	hero.power_requested.connect(activate_slot)
 	hero.menu_requested.connect(show_menu)
 	hero.melee_requested.connect(melee_attack)
+	hero.grapple_requested.connect(grapple_attack)
 	_build_ui()
 	reset_arena()
 	show_menu()
@@ -70,7 +80,7 @@ func _register_input() -> void:
 	var mappings := {
 		"move_forward": KEY_W, "move_back": KEY_S, "move_left": KEY_A,
 		"move_right": KEY_D, "jump": KEY_SPACE, "sprint": KEY_SHIFT,
-		"melee": KEY_F, "pause_lab": KEY_ESCAPE, "power_0": KEY_1, "power_1": KEY_2, "power_2": KEY_3,
+		"melee": KEY_F, "grapple": KEY_G, "pause_lab": KEY_ESCAPE, "power_0": KEY_1, "power_1": KEY_2, "power_2": KEY_3,
 	}
 	for action in mappings:
 		if not InputMap.has_action(action):
@@ -177,6 +187,14 @@ func reset_arena() -> void:
 	_clear_aura("cloak")
 	melee_cooldown = 0
 	melee_windup = 0
+	melee_stage = -1
+	combo_remaining = 0
+	melee_buffered = false
+	grapple_target = null
+	grapple_windup = 0
+	grapple_cooldown = 0
+	grapple_style = 0
+	hero.grapple_lock = 0
 	held_prop = null
 	relay = null
 	relay_core = null
@@ -344,6 +362,7 @@ func _create_target(at: Vector3, index: int) -> void:
 	body.setup(at, patrol, 1.5 + index * 0.35)
 	body.projectile_requested.connect(_sentinel_projectile)
 	body.alerted.connect(_sentinel_alerted)
+	body.grapple_landed.connect(_grapple_landed)
 
 func _prop_contact(other: Node, prop: RigidBody3D) -> void:
 	if not prop.get_meta("thrown", false):
@@ -421,10 +440,19 @@ func _physics_process(delta: float) -> void:
 	if not running:
 		return
 	melee_cooldown = maxf(0, melee_cooldown - delta)
+	combo_remaining = maxf(0, combo_remaining - delta)
+	grapple_cooldown = maxf(0, grapple_cooldown - delta)
+	if grapple_windup > 0:
+		grapple_windup = maxf(0, grapple_windup - delta)
+		if grapple_windup <= 0:
+			_release_grapple()
 	if melee_windup > 0:
 		melee_windup -= delta
 		if melee_windup <= 0:
 			_resolve_melee()
+	if melee_buffered and melee_cooldown <= 0:
+		melee_buffered = false
+		melee_attack()
 	energy = minf(Catalog.MAX_ENERGY, energy + delta * Catalog.REGEN_PER_SECOND)
 	if shield_time > 0:
 		shield_time = maxf(0, shield_time - delta)
@@ -463,7 +491,7 @@ func _physics_process(delta: float) -> void:
 	_update_hud()
 
 func activate_slot(slot: int) -> bool:
-	if not running or slot < 0 or slot >= loadout.size():
+	if not running or slot < 0 or slot >= loadout.size() or melee_cooldown > 0 or hero.grapple_lock > 0:
 		return false
 	var id: String = loadout[slot]
 	if id == "kinetic" and is_instance_valid(held_prop):
@@ -637,21 +665,28 @@ func _orb_impact(body: Node, at: Vector3, hostile: bool, color: Color, direction
 		body.apply_central_impulse(direction * 18)
 
 func melee_attack() -> bool:
-	if not running or melee_cooldown > 0:
+	if not running or hero.grapple_lock > 0:
+		return false
+	if melee_cooldown > 0:
+		if melee_cooldown <= MartialArts.BUFFER_SECONDS:
+			melee_buffered = true
 		return false
 	_reveal()
-	hero.play_attack()
-	melee_cooldown = 0.65
-	melee_windup = 0.18
-	_message("MELEE  /  Close-range punch")
+	melee_stage = (melee_stage + 1) % MartialArts.STRIKES.size() if combo_remaining > 0 else 0
+	var strike: Dictionary = MartialArts.STRIKES[melee_stage]
+	hero.play_strike(melee_stage)
+	melee_forward = hero.aim_direction()
+	melee_forward.y = 0
+	melee_forward = melee_forward.normalized()
+	melee_cooldown = strike.duration
+	melee_windup = strike.contact
+	combo_remaining = strike.duration + MartialArts.COMBO_GRACE
+	_message("MARTIAL ARTS  /  " + strike.label)
 	return true
 
 func _resolve_melee() -> void:
 	var origin: Vector3 = hero.position + Vector3.UP
-	var forward: Vector3 = hero.aim_direction()
-	forward.y = 0
-	forward = forward.normalized()
-	VFX.burst(effects, origin + forward * 1.0, COLORS[color_index], 0.55)
+	var forward := melee_forward
 	_broadcast_noise(origin, 7.0)
 	for target in get_tree().get_nodes_in_group("targets"):
 		var offset: Vector3 = target.position + Vector3.UP - origin
@@ -660,6 +695,7 @@ func _resolve_melee() -> void:
 		var ray := PhysicsRayQueryParameters3D.create(origin, target.position + Vector3.UP, 5)
 		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
 		if not hit.is_empty() and hit.collider == target:
+			VFX.burst(effects, target.position + Vector3.UP * 1.2, Color("efc799"), 0.3)
 			_damage_target(target, 30)
 	if not relay_complete and is_instance_valid(relay):
 		var relay_offset: Vector3 = relay.position + Vector3.UP - origin
@@ -668,6 +704,65 @@ func _resolve_melee() -> void:
 			var relay_hit := get_world_3d().direct_space_state.intersect_ray(relay_ray)
 			if not relay_hit.is_empty() and relay_hit.collider == relay:
 				_energize_relay(12.0, "MELEE STRIKE")
+
+func grapple_attack() -> bool:
+	if not running or grapple_cooldown > 0 or melee_cooldown > 0 or not hero.is_on_floor():
+		return false
+	var forward: Vector3 = hero.aim_direction()
+	forward.y = 0
+	forward = forward.normalized()
+	var closest := 1.85
+	grapple_target = null
+	for target in get_tree().get_nodes_in_group("targets"):
+		var offset: Vector3 = target.position - hero.position
+		if offset.length() >= closest or offset.normalized().dot(forward) < 0.65 or not target.can_grapple():
+			continue
+		if not _grapple_clear(target):
+			continue
+		closest = offset.length()
+		grapple_target = target
+	if grapple_target == null:
+		_message("GRAPPLE  /  Face a nearby grounded sentinel")
+		return false
+	_reveal()
+	melee_buffered = false
+	combo_remaining = 0
+	grapple_target.begin_grapple(hero.position)
+	hero.visual.rotation.y = atan2(forward.x, forward.z)
+	hero.visual.grapple(grapple_style)
+	hero.attack_lock = 0.82
+	hero.grapple_lock = 0.82
+	hero.velocity = Vector3.ZERO
+	melee_forward = forward
+	grapple_windup = 0.34
+	grapple_cooldown = 1.35
+	_message("GRAPPLE  /  " + MartialArts.GRAPPLES[grapple_style].label)
+	return true
+
+func _grapple_clear(target: CharacterBody3D) -> bool:
+	var ray := PhysicsRayQueryParameters3D.create(hero.position + Vector3.UP * 1.2, target.position + Vector3.UP * 1.2, 5)
+	var hit := get_world_3d().direct_space_state.intersect_ray(ray)
+	return not hit.is_empty() and hit.collider == target
+
+func _release_grapple() -> void:
+	if not is_instance_valid(grapple_target):
+		return
+	var target := grapple_target
+	grapple_target = null
+	if target.state != Sentinel.State.GRAPPLED:
+		return
+	if hero.position.distance_to(target.position) > 2.05 or not _grapple_clear(target):
+		target.cancel_grapple()
+		return
+	var impulse := melee_forward * (6.0 if grapple_style == 0 else 3.8)
+	impulse.y = 5.2 if grapple_style == 0 else 2.4
+	target.throw_from_grapple(impulse, grapple_style)
+	grapple_style = 1 - grapple_style
+	_broadcast_noise(target.position, 9.0, target)
+
+func _grapple_landed(target: CharacterBody3D) -> void:
+	VFX.burst(effects, target.position + Vector3.UP * 0.2, Color("d6c5a7"), 0.45)
+	_damage_target(target, 30)
 
 func _clear_aura(kind: String) -> void:
 	var aura: Node3D = kinetic_aura if kind == "kinetic" else cloak_aura
@@ -954,7 +1049,7 @@ func _build_ui() -> void:
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	right.add_child(description)
 	right.add_child(_label("FIELD CONTROLS", 13, COLORS[0]))
-	right.add_child(_label("W A S D     Move\nMouse        Look & aim\nSpace          Jump\nShift             Sprint\n1 / 2 / 3      Use equipped power\nLeft click    Use first power\nF                   Melee punch\nEsc               Edit build / pause", 18))
+	right.add_child(_label("W A S D     Move\nMouse        Look & aim\nSpace          Jump\nShift             Sprint\n1 / 2 / 3      Use equipped power\nLeft click    Use first power\nF                   Jab / cross / kick\nG                  Throw / sweep\nEsc               Edit build / pause", 18))
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	right.add_child(spacer)
@@ -977,7 +1072,7 @@ func _build_ui() -> void:
 	header.add_child(_label("VITALITY", 11, Color("9bb0c2")))
 	health_bar = _bar(Color("ed6d82"))
 	header.add_child(health_bar)
-	var help := _label("ESC  Build / pause    •    F  Punch    •    SHIFT  Sprint", 14, Color("b9c8d8"))
+	var help := _label("ESC  Build / pause    •    F  Combo    /    G  Grapple    •    SHIFT  Sprint", 14, Color("b9c8d8"))
 	help.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	help.position = Vector2(-490, 28)
 	hud.add_child(help)

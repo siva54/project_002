@@ -1,110 +1,81 @@
-# Project 002
+# Project 002 - Flow State
 
-An original third-person superpower action game inspired by the character-building freedom of Project Awakened.
+A third-person martial arts combat prototype rebuilt around connected punch/kick combinations, moving strikes, counters, and controlled paired takedowns. Sifu, Sleeping Dogs and Acts of Blood are the owner's references for combat feel; this remains a prototype with simpler art and animation.
 
-Status: **Hero Lab — Prototype 05**, a grounded human-combat power playground with reactive opponents, objectives, collectibles, and 3D energy effects.
+Double-click `play.bat` (Windows) or `play.command` (macOS), or run `python tools/project.py play`. Enter the courtyard to fight three groups of two, three, and four opponents. There is no power-selection screen in the active game.
 
-## Portable Make commands
-
-With GNU Make, Python 3, and Godot installed, use the same commands on Windows
-and macOS (Linux also works):
-
-```sh
-make doctor   # Show detected OS, Python, Godot path and version
-make play     # Run the game
-make editor   # Open the Godot editor
-make check    # Run all automated checks (make test is an alias)
-make smoke    # Run a smaller validation pass
-make import   # Refresh imported assets
-```
-
-The Makefile selects `py -3` on native Windows and `python3` on macOS/Linux.
-The launcher finds Godot on `PATH`, in macOS Applications/Homebrew locations,
-or in the Windows WinGet package directory. For a portable/custom installation,
-use `make play GODOT="C:/Games/Godot/Godot.exe"` (or a macOS executable path).
-Use `PYTHON=python` if Windows Python is installed without the `py` launcher.
-Paths containing spaces are supported. Windows requires **GNU Make** (`make` or
-`mingw32-make`), not Microsoft's `nmake`; PowerShell is not required.
-`make` alone displays help and does not start the game.
-
-Checks import assets and run both test suites sequentially; `smoke` imports
-assets and verifies startup. This prototype has no persistent player saves.
-
-## Play
-
-Double-click `play.command` on macOS or `play.bat` on Windows. You can also run this command from `project_002`:
-
-```sh
-godot --path client
-```
-
-You can also open `client/project.godot` in Godot 4 and press F6 with the hero lab scene open, or F5 to run the project.
-
-The game opens with three empty slots. Choose exactly three of the seven powers below; Enter becomes available only when all three slots are filled. Cards and the loadout preview show the assigned keys (1, 2, 3) in selection order. Click a selected card to remove it, then choose a replacement. You can also choose a signature color. Enter the playground to disable five sentinels, collect power cells, and charge the central relay; Esc pauses and reopens your build.
-
-| Power | What it does |
-| --- | --- |
-| Energy Bolt | Cast a traveling orb that damages targets and pushes crates. |
-| Seeker Missiles | Fire a staggered three-missile volley that curves toward exposed sentinels. |
-| Blink | Teleport up to eight metres through clear space. |
-| Telekinesis | Lift a crate, then use the power again to throw it. |
-| Cloak | Conceal yourself for five seconds; attacks reveal you. |
-| Shockwave | Damage exposed enemies within six metres and fling crates outward. Solid cover blocks it. |
-| Energy Shield | Block incoming enemy energy for five seconds while continuing to move and attack. |
-
-All thirty-five distinct three-power combinations are available. For example, Shield + Shockwave + Blink creates a protected close-range build, while Seeker Missiles + Cloak + Blink supports hit-and-reposition play. Removing Shield or Cloak from the build ends its active effect. Arena reset preserves your selected three powers.
+## Controls
 
 | Control | Action |
 | --- | --- |
-| WASD / mouse | Move / look and aim |
-| Space / Shift | Jump / sprint |
-| 1, 2, 3 | Use the corresponding equipped power |
-| Left click | Use the first equipped power |
-| F | Melee punch (short windup and cooldown) |
-| Esc | Open hero creation and pause |
+| WASD | Move during combat; aim toward the opponent for the next strike |
+| Mouse | Orbit the camera |
+| LMB | Punch branch; stepping straight when initiating while moving |
+| RMB | Kick branch |
+| Q | Hold guard; tap at the overhead Q cue for a paired counter finisher |
+| Space + WASD | Grounded sidestep; without direction, step backward |
+| G | Clinch a close opponent |
+| LMB / RMB in clinch | Knee takedown / leg sweep |
+| Tab | Pause and open the move list |
+| Esc | Pause / resume |
+| R | Restart all bouts |
 
-Energy regenerates. Telekinesis grabs amber crates; pressing its key again throws the held crate. Two energy orbs, two melee punches, or one thrown crate disable a sentinel. Cloak lasts five seconds and breaks when attacking. Sentinels patrol while unaware, investigate sounds from powers and thrown crates, alert nearby allies when hit, then pursue and strafe at combat range when they see the hero. A hit causes a visible stagger; a lethal hit leaves a short shutdown pose before the sentinel clears. Their projectiles travel through space and can be dodged; already-fired attacks can still hit a cloaked hero.
+Queue the next punch or kick during an attack. Follow-ups blend in during recovery instead of returning to idle. Changing input changes the next move; holding a movement direction lets you step through hand strikes and select another opponent. A timed Q intercepts the incoming attack and starts a three-contact finisher: wrist interception, shovel hook, elbow and sweeping drive against punches; deflection, knee, crane straight and driving side kick against kicks. The contacts deal 15, 20 and 65 damage, synchronized to the paired choreography. You can buffer the next attack during the landing to continue into another opponent. Holding Q remains a normal guard. Clinches release after a short timeout if you do not choose a follow-up.
 
-Seeker Missiles cost 40 energy and launch three small homing projectiles 130 ms apart. Each tracks its initially acquired, exposed sentinel with a bounded turn rate; cover or a destroyed target breaks its lock, then it continues forward and can be avoided.
+## Moves and combinations
 
-Four cells are placed in the arena: jade cells restore 30 energy and coral cells restore 25 vitality. The central Power Relay takes charge from Energy Bolts (25%), Shockwaves (30%), melee strikes (12%), and thrown crates (45%). Bringing it to 100% restores all energy and adds 30 vitality. The HUD and the 3D relay label show objective progress. Reset restores enemies, pickups, relay charge, health, and resources.
+Fourteen strikes have individual limb paths, timings, reactions, costs and transitions: jab, cross, lead hook, rear hook, shovel hook, uppercut, crane straight, elbow, stepping karate straight, front kick, low round kick, high roundhouse, side kick, and knee. The clinch adds knee and sweep takedowns, and timed guard adds two paired counter finishers.
 
-## Current limits
+| Input route | Combination |
+| --- | --- |
+| Repeated LMB | Jab > Cross > Lead hook > Rear hook > Uppercut > Crane straight > Elbow |
+| Repeated RMB | Front kick > Side kick > Low kick > Roundhouse |
+| LMB, RMB, LMB, LMB | Jab > Low kick > Shovel hook > Uppercut |
+| LMB, LMB, RMB, LMB | Jab > Cross > Knee > Elbow |
+| RMB, RMB, LMB | Front kick > Side kick > Stepping karate straight |
+| G, then LMB or RMB | Hold > Knee takedown or Sweep |
+| Timed Q against a punch | Intercept > Shovel hook > Elbow > Sweep and drive |
+| Timed Q against a kick | Deflect > Knee > Crane straight > Driving side kick |
 
-The hero and sentinels use a CC0 digital-human body and face with adult proportions, clothed materials, an authored idle/walk animation set, and a hand-to-face close-combat strike. Small chest patches identify the two teams without turning the character into a colored mannequin. The arena uses ambientCG concrete and metal color, normal, roughness, and metalness maps. Energy effects use traveling sphere meshes, animated shells, rotating torus meshes, bounded mesh particles, and local lights.
+Later uppercuts and strong kicks can end a chain with a controlled knockdown. Continue toward another opponent while the fallen opponent recovers. The active mode creates no physical ragdoll bodies: strikes, defeats, paired takedowns, and recovery stay animated. Collision still governs movement and walls, and only a limb that reaches the opponent can deal strike damage.
 
-This remains a mechanics POC with a simple training arena. Appearance customization is team-accent selection. There is no detailed character sculpting, audio, campaign, progression, controller support, or saved loadout yet. Selections persist only during the current session. Sentinel navigation is direct local steering with patrol, investigate, search, stagger, and engage states; it does not yet use pathfinding, tactical cover selection, coordinated formations, or melee attacks. The animation set does not include advanced foot placement, terrain IK, or a full combat-animation library.
+[Karate positioning review](docs/qa/karate-positioning.mp4)
 
-Effects are intentionally bounded for a smooth playground loop: transient impact volumes are capped, projectiles do not run CPU particle emitters, only three enemy shots may be in flight, and sight checks refresh at 120 ms. Enemy shots have a short visible wind-up before firing.
+The latest recording isolates an angled jab-cross, a crane straight, a stepping karate straight, and both defensive slips. Each labeled section resets the sparring fixture; inputs are scripted and ordinary AI is disabled. It is an animation review, not a continuous live bout. Earlier videos, including `grounded-exchange`, describe superseded builds.
 
-The intended starting window is 1280 × 800. Godot `4.7.2.stable.official.ed1daf0bf` was used for verification on this Mac.
+The main chain uses captured body motion with hip turns, shoulder rotation, leg motion and weight transfer. Captured attack entries include two distinct karate straight performances; some other moves still share a source performance at different timings. Jab and cross are consecutive parts of one take with a shared heading. Translation is reconstructed from the retargeted support foot so the performer's different proportions do not cause skating. Captured hand/foot contact positions set target approach distance. When the opponent is out of the captured reach, the fighter takes a guarded step before the strike begins; facing settles with that step, and movement input resumes through recovery. Contact correction is capped at 7.5 cm. The elbow, low kick and knee retain constructed adjustments.
 
-## Checks
+Transitions retain outgoing angular motion. The idle uses an active boxing guard. Hit recoil is applied to the pose that was struck, retaining the hands and lower-body stance before recovering to guard; it no longer replaces the body with an unrelated standing pose. Normal strikes do not pause the animation clock. Counter framing eases toward a side view, with directional camera response and separate finishing/landing audio. Landing feedback occurs when the body reaches the floor.
+
+## Animation and scope
+
+Quaternius and CMU source motion supply the body animation. The primary punch chain uses trimmed sequences from CMU subject 14 take 01; the new crane straight and defensive slips use subject 135 take 02, and the stepping straight uses subject 135 take 09. Kicks also use subject 135. Front, side and round kicks are oriented as whole-body actions toward the opponent. The bake stores corrected planar travel, support-foot and strike-contact metadata for collision-respecting movement. Procedural constraints remain for small contact corrections, selected close moves, and grips. Paired counters and takedowns are constructed sequences rather than captured two-person performances. All source assets and baking code are bundled locally. [Motion design references and limitations](docs/COMBAT_MOTION.md) explain the approach.
+
+The model, arena, footwork and choreography remain prototype quality. This build does not reproduce Sleeping Dogs' production animation library, environmental finishers, open world, character customization, controller support or saved progression. Hero Lab remains a legacy scene at `client/scenes/hero_lab.tscn`.
+
+## Development
+
+Requires Godot 4 and Python 3. `make play`, `make check`, `make smoke`, and `make editor` are aliases when GNU Make is installed. The launcher discovers Godot on PATH, Windows WinGet, and macOS app/Homebrew locations.
 
 ```sh
-godot --headless --editor --quit --path client
-godot --headless --path client --script res://tests/run_tests.gd
-godot --headless --path client --script res://tests/run_power_tests.gd
-godot --path client --script res://tests/capture.gd
-godot --path client --fixed-fps 60 --script res://tests/capture_actions.gd
+python tools/project.py check
+python tools/project.py smoke
+python -m unittest discover -s tools/tests
+# Rebuild the bundled source animation bank:
+python tools/project.py play --headless --script res://tools/bake_combat_library.gd
+# Active integration tests and rendered review:
+python tools/project.py play --headless --script res://tests/run_kung_fu_tests.gd
+python tools/project.py play --fixed-fps 60 --script res://tests/capture_karate_positioning.gd
+python tools/project.py play --fixed-fps 60 --script res://tests/capture_controlled_recovery.gd
 ```
 
-The automated suite checks loadouts, energy and cooldowns, cloak behavior, traveling projectile damage, physical thrown-crate impact, Blink collision and ground travel, reset, defeat, movement and animation selection, jumping, melee timing, pause including in-flight attacks, reactive sentinel behavior, shot telegraphing, pickups, and relay charging/rewards. The dedicated power suite also checks all thirty-five builds, empty/incomplete selection rejection, Seeker Missile acquisition and homing impact, Shockwave range and cover, Shield expiry and damage blocking, and cleanup when changing powers. The capture command opens a temporary rendered window, saves images to `docs/qa/`, and exits.
+The active suite verifies every move through the input graph, actual limb contact and single-hit damage, early combo buffering, movement and target switching, stamina, both three-hit counter finishers, limb contact, floor-timed landing feedback, early recoil, transition continuity, fixed follow-through targets, preserved captured hips/legs, captured movement, staged damage, counter interruption and buffered target handoff, directional guard, grounded evasion, cover, both paired takedowns, pause, interruption, recovery, defeat, melee AI, bout progression, restart, and absence of ragdolls. The standard check command also runs the retained legacy suites.
 
-Read [the concept and prototype scope](docs/CONCEPT.md) for the proposed direction, milestones, and research references. Decisions in that document are proposals unless explicitly marked as confirmed.
+- `combat_moves.gd`: move definitions and punch/kick graph.
+- `counter_sequences.gd`: shared counter choreography and contact/landing times.
+- `combat_pose.gd`: limb arcs, two-bone constraints and grip alignment.
+- `kung_fu_visual.gd`: sampled base motion, pose blending, locomotion layering and paired poses.
+- `kung_fu_fighter.gd`: movement, links, defense, clinch ownership and animated defeat/recovery.
+- `kung_fu_dojo.gd`: input, directional target selection, contact checks, opponents, camera and UI.
 
-The prototype uses Godot 4, already installed on the development machine and used by the neighboring project. Its implementation is independent of that project.
-
-Development history: [work log](docs/WORK_LOG.md).
-
-## Implementation and free assets
-
-- `hero_controller.gd`: movement, camera, and input.
-- `avatar_visual.gd`: instanced CC0 digital human, real face/body materials, animation playback, and team appearance.
-- `energy_projectile.gd`: projectile travel and continuous collision queries.
-- `sentinel_controller.gd`: patrol, investigate, search, combat, hit response, and shutdown behavior for training opponents.
-- `power_vfx.gd`: 3D shells, mesh particles, rings, auras, and lights.
-- `surface_library.gd`: reusable PBR material setup.
-- `hero_lab.gd`: arena assembly, encounters, loadouts, and UI.
-
-See [third-party credits and license records](docs/THIRD_PARTY.md). All downloaded runtime assets are bundled locally, so playing does not require an internet connection.
+See [the concept](docs/CONCEPT.md), [credits](docs/THIRD_PARTY.md), and [work log](docs/WORK_LOG.md).

@@ -3,6 +3,7 @@ extends CharacterBody3D
 signal power_requested(slot: int)
 signal menu_requested
 signal melee_requested
+signal grapple_requested
 
 const Avatar = preload("res://scripts/avatar_visual.gd")
 
@@ -13,6 +14,7 @@ var arm: SpringArm3D
 var camera: Camera3D
 var visual: Node3D
 var attack_lock := 0.0
+var grapple_lock := 0.0
 var accent := Color("46dec6")
 
 func _ready() -> void:
@@ -52,6 +54,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("melee"):
 		melee_requested.emit()
+	if event.is_action_pressed("grapple"):
+		grapple_requested.emit()
 	for slot in range(3):
 		if event.is_action_pressed("power_%d" % slot):
 			power_requested.emit(slot)
@@ -62,18 +66,21 @@ func _physics_process(delta: float) -> void:
 	if not enabled:
 		return
 	attack_lock = maxf(0, attack_lock - delta)
+	grapple_lock = maxf(0, grapple_lock - delta)
 	var direction := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var move := Basis(Vector3.UP, yaw) * Vector3(direction.x, 0, direction.y)
 	var speed := 6.8 if Input.is_action_pressed("sprint") else 3.2
 	if attack_lock > 0:
 		speed *= 0.45
+	if grapple_lock > 0:
+		speed = 0
 	velocity.x = move_toward(velocity.x, move.x * speed, 22 * delta)
 	velocity.z = move_toward(velocity.z, move.z * speed, 22 * delta)
 	if move.length() > 0.05 and attack_lock <= 0:
 		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(move.x, move.z), minf(1, delta * 14))
 	if not is_on_floor():
 		velocity.y -= 24.0 * delta
-	elif Input.is_action_just_pressed("jump"):
+	elif Input.is_action_just_pressed("jump") and grapple_lock <= 0:
 		velocity.y = 9.0
 	move_and_slide()
 	visual.locomotion(Vector2(velocity.x, velocity.z).length(), is_on_floor(), delta)
@@ -93,6 +100,12 @@ func play_attack() -> void:
 	visual.rotation.y = atan2(direction.x, direction.z)
 	attack_lock = 0.42
 	visual.attack()
+
+func play_strike(index: int) -> void:
+	var direction := aim_direction()
+	visual.rotation.y = atan2(direction.x, direction.z)
+	visual.strike(index)
+	attack_lock = visual.attack_remaining
 
 func muzzle_position() -> Vector3:
 	return position + Vector3.UP * 1.25 + aim_direction() * 0.55

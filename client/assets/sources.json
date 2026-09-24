@@ -19,5 +19,83 @@
     "source": "https://github.com/ibrews/VitruvianGodot/tree/bdecdcd537b4031fdd0fb299b7e4f93f084fffa0/godot_project",
     "body_glb_sha256": "e9e002e2443672285c2d4306804addbba654c41953022865e4342b1bfad05b2a",
     "head_glb_sha256": "54efb42e9f3dd7e7cf3c3e86ed5298f3ba26e341d5743245cbe2621c547c5f1f"
+  },
+  {
+    "asset": "135.asf",
+    "source": "http://mocap.cs.cmu.edu/subjects/135/135.asf",
+    "sha256": "bdce70f4beff58066f77260f2ca651ac38e27c1c33f63aec3752379a0b555e00",
+    "retrieved": "2026-09-21"
+  },
+  {
+    "asset": "135_04.amc",
+    "source": "http://mocap.cs.cmu.edu/subjects/135/135_04.amc",
+    "sha256": "1cdc63fd44db1c550b9147cca42b883b1ad96353b6b8d2fac44cefa2344017be",
+    "retrieved": "2026-09-21"
+  },
+  {
+    "asset": "135_02.amc",
+    "source": "https://mocap.cs.cmu.edu/subjects/135/135_02.amc",
+    "sha256": "1fd776a4b9798466a2fad9a46296f7e66d6e95d639136b95b120dda07f427747",
+    "retrieved": "2026-09-24"
+  },
+  {
+    "asset": "135_07.amc",
+    "source": "http://mocap.cs.cmu.edu/subjects/135/135_07.amc",
+    "sha256": "f2d29e7994d2d69cdff7d539771df473f86cdcd217ee597161bd287fc8c54d22",
+    "retrieved": "2026-09-21"
+  },
+  {
+    "asset": "87.asf",
+    "source": "http://mocap.cs.cmu.edu/subjects/87/87.asf",
+    "sha256": "25f9e73e7852aab824aee6a97e6c75256e345217f9c41dcf500d10780e6ce471",
+    "retrieved": "2026-09-21"
+  },
+  {
+    "asset": "87_01.amc",
+    "source": "http://mocap.cs.cmu.edu/subjects/87/87_01.amc",
+    "sha256": "ec7ce4e5a124566ba49d0483c21521f7198adc29dd106f5f0f425bc5f81b7544",
+    "retrieved": "2026-09-21"
+  },
+  {
+    "asset": "87_03.amc",
+    "source": "http://mocap.cs.cmu.edu/subjects/87/87_03.amc",
+    "sha256": "57ef8b79d425ef1bf0150b380362d55ac07421e835fe1e9ec49d355bc544f5ad",
+    "retrieved": "2026-09-21"
+  },
+  {
+    "asset": "quaternius_standard.glb",
+    "source": "https://opengameart.org/sites/default/files/universal_animation_librarystandard.zip",
+    "sha256": "1b7bf67866360665426bb99e4c71bd619f19b408453c24e30f0c3071601eee5c",
+    "retrieved": "2026-09-21"
+  },
+  {
+    "asset": "quaternius_standard_2.glb",
+    "source": "https://quaternius.itch.io/universal-animation-library-2",
+    "sha256": "8cee20ab1bc55130092447e810e26df22dd2803eccc54f52137a7d54d7ab88a8",
+    "retrieved": "2026-09-21"
+  },
+  {
+    "asset": "135_11.amc",
+    "source": "http://mocap.cs.cmu.edu/subjects/135/135_11.amc",
+    "sha256": "47e2fe3ce618b65c916b590a7d2bfa44a47a08a8ae65e5b18b23f4786d460ea2",
+    "retrieved": "2026-09-21"
+  },
+  {
+    "asset": "135_09.amc",
+    "source": "http://mocap.cs.cmu.edu/subjects/135/135_09.amc",
+    "sha256": "74d3af0b3c5bd5d36b7ad5347351b237b5d52541ea9f432cb69a4d11cc7b4e41",
+    "retrieved": "2026-09-21"
+  },
+  {
+    "asset": "14.asf",
+    "source": "http://mocap.cs.cmu.edu/subjects/14/14.asf",
+    "sha256": "96a22ac52ac15bd464c296028936be0ae7d2f0ee4a056202b1aa17f4ad02ec7f",
+    "retrieved": "2026-09-21"
+  },
+  {
+    "asset": "14_01.amc",
+    "source": "http://mocap.cs.cmu.edu/subjects/14/14_01.amc",
+    "sha256": "a2648d51ea42461d8667557f8721fa8ff8463341838defdf7c2d32a96f19cba5",
+    "retrieved": "2026-09-21"
   }
 ]

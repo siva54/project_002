@@ -200,15 +200,15 @@ func _run() -> void:
 	lab.hero.camera.global_position = lab.hero.position + Vector3.UP * 1.3
 	lab.hero.camera.look_at(melee_target.position + Vector3.UP * 1.3)
 	check(lab.melee_attack(), "Melee input must begin an attack")
-	check(lab.hero.visual.active_clip == "Punch", "Melee must use the human combatant punch pose")
+	check(lab.hero.visual.active_clip == "Jab", "Melee must use the lead jab pose")
 	check(melee_target.get_meta("health") == 60, "Melee damage must wait for the strike windup")
 	check(not lab.melee_attack(), "Melee cooldown must prevent duplicate strikes")
-	lab._physics_process(0.19)
+	lab._physics_process(0.31)
 	check(melee_target.get_meta("health") == 30, "A nearby target in the punch arc must take damage")
 	lab.melee_cooldown = 0
 	lab.hero.camera.look_at(lab.hero.camera.global_position + Vector3.BACK)
 	lab.melee_attack()
-	lab._physics_process(0.19)
+	lab._physics_process(0.31)
 	check(melee_target.get_meta("health") == 30, "Punching away from a target must not damage it")
 	lab.hero.camera.look_at(melee_target.position + Vector3.UP)
 	var wall = lab._box(lab.arena, melee_target.position + Vector3(0, 1.5, 0.8), Vector3(3, 3, 0.1), Color.GRAY)
@@ -216,7 +216,7 @@ func _run() -> void:
 		await physics_frame
 	lab.melee_cooldown = 0
 	lab.melee_attack()
-	lab._physics_process(0.19)
+	lab._physics_process(0.31)
 	check(melee_target.get_meta("health") == 30, "Melee must not reach a target through cover")
 	lab._launch_orb(melee_target.position + Vector3(0, 1.1, 3), melee_target.position + Vector3.UP, Color.CYAN, false, lab.hero)
 	for i in range(30):

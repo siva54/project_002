@@ -90,7 +90,7 @@ def main():
             return result
         if options.command == "smoke":
             return checked_run(command + ["--headless", "--quit-after", "60"])
-        for suite in ("run_tests.gd", "run_power_tests.gd"):
+        for suite in ("run_tests.gd", "run_power_tests.gd", "run_martial_tests.gd", "run_kung_fu_tests.gd"):
             result = checked_run(command + ["--headless", "--script", "res://tests/" + suite])
             if result:
                 return result

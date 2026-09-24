@@ -1,3 +1,5 @@
 .DS_Store
 client/.godot/
 docs/qa/*.log
+artifacts/
+__pycache__/

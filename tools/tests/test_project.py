@@ -21,8 +21,15 @@ class LauncherTests(unittest.TestCase):
                 project.find_godot(str(executable) + "-missing")
 
     def test_mac_app_discovery_without_path(self):
-        with patch.object(project.shutil, "which", return_value=None), patch.object(project.Path, "is_file", lambda p: str(p) == "/Applications/Godot.app/Contents/MacOS/Godot"):
-            self.assertEqual(project.find_godot(system="Darwin"), "/Applications/Godot.app/Contents/MacOS/Godot")
+        expected = Path("/Applications/Godot.app/Contents/MacOS/Godot")
+        with patch.object(project.shutil, "which", return_value=None), patch.object(project.Path, "is_file", lambda p: p == expected):
+            self.assertEqual(project.find_godot(system="Darwin"), str(expected))
+
+    def test_check_includes_martial_arts_suite(self):
+        with patch.object(project.sys, "argv", ["project.py", "check"]), patch.object(project, "find_godot", return_value="godot"), patch.object(project, "checked_run", return_value=0) as run:
+            self.assertEqual(project.main(), 0)
+            self.assertEqual(run.call_count, 5)
+            self.assertEqual(run.call_args.args[0][-1], "res://tests/run_kung_fu_tests.gd")
 
     def test_windows_nested_winget_prefers_console(self):
         with tempfile.TemporaryDirectory() as directory, patch.dict(project.os.environ, {"LOCALAPPDATA": directory}), patch.object(project.shutil, "which", return_value=None):
